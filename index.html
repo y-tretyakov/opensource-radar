@@ -32,6 +32,16 @@
 
     <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5">
 
+        <div id="modeTabs" class="flex items-center gap-1 mb-4 p-1 rounded-xl bg-[#0d1117]/80 border border-[#263043]/50 overflow-x-auto">
+            <button class="mode-tab active" data-mode="trending">📡 Trending</button>
+            <button class="mode-tab" data-mode="hidden-gems">💎 Gems</button>
+            <button class="mode-tab" data-mode="exploding">🚀 Exploding</button>
+            <button class="mode-tab" data-mode="new">🌟 New</button>
+            <button class="mode-tab" data-mode="established">🏛 Established</button>
+            <button class="mode-tab" data-mode="tracking">📡 Tracking</button>
+            <button class="mode-tab" data-mode="search">🔍 Search</button>
+        </div>
+
         <section class="glass rounded-2xl p-4 sm:p-5 mb-4">
             <div class="flex items-center gap-2 sm:gap-3">
                 <div class="relative flex-1">
@@ -138,6 +148,24 @@
                         <line x1="2" y1="12.5" x2="14" y2="12.5"/>
                     </svg>
                 </button>
+                <button id="btn-map" class="view-btn" title="Radar Map">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="8" r="6"/>
+                        <circle cx="8" cy="8" r="2"/>
+                        <line x1="8" y1="2" x2="8" y2="4"/>
+                        <line x1="8" y1="12" x2="8" y2="14"/>
+                        <line x1="2" y1="8" x2="4" y2="8"/>
+                        <line x1="12" y1="8" x2="14" y2="8"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="compareBar" class="hidden mb-3 p-3 rounded-xl glass border border-blue-500/20 flex items-center justify-between" style="background:rgba(13,17,23,0.8)">
+            <span id="compareCount" class="text-xs text-slate-400">0 selected</span>
+            <div class="flex items-center gap-2">
+                <button id="compareBtn" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all">Compare</button>
+                <button id="compareClear" class="text-xs px-2 py-1.5 rounded-lg text-slate-500 hover:text-slate-300 transition-all">Clear</button>
             </div>
         </div>
 

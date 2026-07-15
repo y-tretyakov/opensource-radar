@@ -1,26 +1,7 @@
-import type { RadarScore } from '../models/repository'
 import { daysSince } from '../utils/dates'
-
-export function calculateRadarScore(repo: {
-  stargazers_count: number
-  forks_count: number
-  description: string | null
-  created_at: string
-  pushed_at: string
-}): RadarScore {
-  const ageDays = daysSince(repo.created_at) || 1
-  const growthPerDay = repo.stargazers_count / ageDays
-  const daysSinceUpdate = daysSince(repo.pushed_at)
-
-  const popularity = Math.min(40, Math.round(Math.log10(repo.stargazers_count + 1) * 12))
-  const growth = Math.min(25, Math.round(growthPerDay * 2))
-  const activity = Math.min(20, Math.max(0, 20 - Math.floor(daysSinceUpdate / 18)))
-  const forkScore = Math.min(10, Math.round(Math.log10(repo.forks_count + 1) * 4))
-  const descScore = (repo.description && repo.description.length > 10) ? 5 : 0
-  const total = Math.min(100, popularity + growth + activity + forkScore + descScore)
-
-  return { total, growth, activity, popularity }
-}
+import { calculateRadarScore as calcEngineScore } from '../features/scoring/engine'
+import { applyBadges, classifyProject, scoreToString } from '../features/scoring/labels'
+import type { ScoreBreakdown, Badge, ProjectClassification } from '../features/scoring/types'
 
 export function enrichRepo(repo: {
   id: number
@@ -52,7 +33,9 @@ export function enrichRepo(repo: {
   if (daysSinceUpdate > 365) activity = '🔴 Archived'
   else if (daysSinceUpdate > 90) activity = '🟡 Slow'
 
-  const score = calculateRadarScore(repo)
+  const scoreBreakdown: ScoreBreakdown = calcEngineScore(repo)
+  const badges: Badge[] = applyBadges(scoreBreakdown, repo.stargazers_count)
+  const classification: ProjectClassification = classifyProject(repo.topics, repo.language)
 
   return {
     ...repo,
@@ -61,7 +44,11 @@ export function enrichRepo(repo: {
     _weeklyGrowth: weeklyGrowth,
     _trend: trend,
     _activity: activity,
-    _score: score.total,
+    _score: scoreBreakdown.total,
+    _scoreBreakdown: scoreBreakdown,
+    _badges: badges,
+    _classification: classification,
+    _scoreDescription: scoreToString(scoreBreakdown.total),
     _trendLabel: trend.split(' ').slice(1).join(' ') || trend,
     _trendIcon: trend.split(' ')[0] || '',
   }

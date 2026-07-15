@@ -1,13 +1,22 @@
-import type { GitHubSearchResponse, FilterState } from './types'
+import type { GitHubSearchResponse, FilterState, DiscoveryMode } from './types'
 import type { EnrichedRepository } from '../models/repository'
 import { enrichRepo } from '../core/radar-score'
 import { render } from '../core/render'
 import { store } from '../state/store'
 import { getFilters } from '../components/filters'
+import { getMode } from '../features/discovery/modes'
+import { updateSnapshots } from '../features/tracking/dashboard'
 
 const API_BASE = 'https://api.github.com/search/repositories'
 
-function buildQuery(f: FilterState): string {
+function buildQuery(f: FilterState, mode: DiscoveryMode): string {
+  if (mode !== 'search') {
+    const config = getMode(mode)
+    let q = config.buildQuery(f.topic)
+    if (f.language) q += `+language:${f.language}`
+    return q
+  }
+
   const date = new Date()
   date.setDate(date.getDate() - f.days)
   const dateStr = date.toISOString().split('T')[0]
@@ -20,9 +29,10 @@ function buildQuery(f: FilterState): string {
 
 export async function searchRepositories(
   f: FilterState,
-  page: number
+  page: number,
+  mode: DiscoveryMode = 'search'
 ): Promise<{ repos: EnrichedRepository[]; totalCount: number }> {
-  const q = buildQuery(f)
+  const q = buildQuery(f, mode)
   const url = `${API_BASE}?q=${q}&sort=${f.sort}&order=${f.order}&per_page=${f.perPage}&page=${page}`
 
   const res = await fetch(url)
@@ -47,9 +57,11 @@ export async function fetchRepos(): Promise<void> {
   if (hdr) hdr.textContent = ''
 
   try {
-    const { repos, totalCount } = await searchRepositories(f, store.getState().page)
+    const state = store.getState()
+    const { repos, totalCount } = await searchRepositories(f, state.page, state.mode)
 
     store.setState({ repositories: repos })
+    updateSnapshots(repos)
 
     const countStr = repos.length ? `${totalCount.toLocaleString()} projects` : ''
     const hdrEl = document.getElementById('headerResultCount')

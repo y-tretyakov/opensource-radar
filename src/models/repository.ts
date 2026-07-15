@@ -1,3 +1,5 @@
+import type { ScoreBreakdown, Badge, ProjectClassification } from '../features/scoring/types'
+
 export interface EnrichedRepository {
   id: number;
   full_name: string;
@@ -22,6 +24,10 @@ export interface EnrichedRepository {
   _trend: string;
   _activity: string;
   _score: number;
+  _scoreBreakdown: ScoreBreakdown;
+  _badges: Badge[];
+  _classification: ProjectClassification;
+  _scoreDescription: string;
   _trendLabel: string;
   _trendIcon: string;
 }
@@ -35,9 +41,4 @@ export interface RadarState {
   tracked: Set<string>;
 }
 
-export interface RadarScore {
-  total: number;
-  growth: number;
-  activity: number;
-  popularity: number;
-}
+export type { ScoreBreakdown, Badge, ProjectClassification }

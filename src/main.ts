@@ -4,6 +4,10 @@ import { store } from './state/store'
 import { loadTracked } from './utils/storage'
 import { render, switchView, sortBy, toggleTrack, updateToggleButtons, checkMobile } from './core/render'
 import { fetchRepos, resetAndFetch, changePage } from './api/github'
+import { initTabs, updateTabs } from './features/discovery/tabs'
+import { showBreakdown } from './features/scoring/breakdown'
+import { showTimeline } from './features/timeline/timeline'
+import { toggleCompare, clearCompare, showCompare } from './features/compare/compare'
 import {
   populateLanguages,
   updateFilterSummary,
@@ -23,10 +27,36 @@ setOnFilterChange(resetAndFetch)
 function handleResultClick(e: MouseEvent): void {
   const target = e.target as HTMLElement
 
-  const trackBtn = target.closest('[data-action="track"]') as HTMLElement | null
-  if (trackBtn) {
-    const repo = trackBtn.dataset.repo
-    if (repo) toggleTrack(repo, trackBtn)
+  const actionBtn = target.closest('[data-action]') as HTMLElement | null
+  if (actionBtn) {
+    const action = actionBtn.dataset.action
+    const repo = actionBtn.dataset.repo
+    if (!repo) return
+
+    if (action === 'track') {
+      toggleTrack(repo, actionBtn)
+      return
+    }
+
+    if (action === 'timeline') {
+      const found = store.getState().repositories.find(r => r.full_name === repo)
+      if (found) showTimeline(found)
+      return
+    }
+
+    if (action === 'compare') {
+      toggleCompare(repo)
+      return
+    }
+  }
+
+  const scoreEl = target.closest('[data-score-click]') as HTMLElement | null
+  if (scoreEl) {
+    const fullName = scoreEl.dataset.scoreClick
+    if (fullName) {
+      const repo = store.getState().repositories.find(r => r.full_name === fullName)
+      if (repo) showBreakdown(repo)
+    }
     return
   }
 
@@ -56,9 +86,12 @@ document.getElementById('searchBtn')?.addEventListener('click', resetAndFetch)
 
 document.getElementById('btn-grid')?.addEventListener('click', () => switchView('grid'))
 document.getElementById('btn-list')?.addEventListener('click', () => switchView('list'))
+document.getElementById('btn-map')?.addEventListener('click', () => switchView('map'))
 
 document.getElementById('pagination')?.addEventListener('click', handlePageClick)
 document.getElementById('results')?.addEventListener('click', handleResultClick)
+document.getElementById('compareBtn')?.addEventListener('click', showCompare)
+document.getElementById('compareClear')?.addEventListener('click', clearCompare)
 
 document.getElementById('filterToggleBtn')?.addEventListener('click', toggleFilters)
 document.getElementById('orderBtn')?.addEventListener('click', toggleOrder)
@@ -104,4 +137,6 @@ document.addEventListener('error', (e: Event) => {
 
 populateLanguages()
 updateFilterSummary()
+initTabs()
+updateTabs()
 fetchRepos()

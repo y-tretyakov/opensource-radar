@@ -3,6 +3,9 @@ import type { EnrichedRepository } from '../models/repository'
 import { formatCount, formatInt, langColor } from '../utils/format'
 import { timeAgo, daysSince } from '../utils/dates'
 import { saveTracked } from '../utils/storage'
+import { renderBadges } from '../features/scoring/badge-display'
+import { renderWhyInteresting } from '../features/scoring/reasons'
+import { renderRadarMap } from '../features/radar-map/map'
 
 function observeScroll(): void {
   const els = document.querySelectorAll('.scroll-reveal')
@@ -40,8 +43,10 @@ export function updateToggleButtons(): void {
   const state = store.getState()
   const g = document.getElementById('btn-grid')
   const l = document.getElementById('btn-list')
+  const m = document.getElementById('btn-map')
   if (g) g.className = 'view-btn' + (state.view === 'grid' ? ' active' : '')
   if (l) l.className = 'view-btn' + (state.view === 'list' ? ' active' : '')
+  if (m) m.className = 'view-btn' + (state.view === 'map' ? ' active' : '')
 }
 
 function renderCards(repos: EnrichedRepository[]): void {
@@ -66,7 +71,7 @@ function renderCards(repos: EnrichedRepository[]): void {
         </div>
       </div>
 
-      ${r._trend ? `<div class="px-4 pt-2.5 flex justify-center"><div class="trend-badge ${r._trendIcon === '🔥' ? 'hot' : r._trendIcon === '🚀' ? 'rising' : 'trending'}"><span class="trend-icon">${r._trendIcon}</span><span class="trend-label">${r._trendLabel || r._trend}</span></div></div>` : ''}
+      ${r._badges.length ? `<div class="px-4 pt-2.5 flex justify-center">${renderBadges(r._badges)}</div>` : ''}
 
       <div class="px-4 pt-3 grid grid-cols-4 gap-2">
         <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
@@ -75,19 +80,34 @@ function renderCards(repos: EnrichedRepository[]): void {
         <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${r.language || '—'}</div></div>
       </div>
 
-      <div class="px-4 pt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
+      <div class="px-4 pt-2.5 flex items-center gap-2 cursor-pointer" data-score-click="${r.full_name}">
+        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+          <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style="width:${r._score}%"></div>
+        </div>
+        <span class="text-xs font-mono text-blue-400/80 font-bold">${r._score}<span class="text-slate-600 font-normal">/100</span></span>
+      </div>
+      <div class="px-4 pb-1">
+        <span class="text-[10px] font-medium ${r._score >= 75 ? 'text-growth' : r._score >= 60 ? 'text-alert' : 'text-slate-500'}">${r._scoreDescription}</span>
+        <span class="text-[10px] text-slate-600 mx-1">·</span>
+        <span class="text-[10px] text-slate-500">${r._classification}</span>
+      </div>
+
+      ${renderWhyInteresting(r)}
+
+      <div class="px-4 pt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
         <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
         <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
         <div><span class="text-slate-600">License</span> <span class="text-slate-300">${r.license?.spdx_id || '—'}</span></div>
         <div><span class="text-slate-600">Size</span> <span class="text-slate-300">${(r.size / 1024).toFixed(1)} MB</span></div>
-        <div class="col-span-2 flex items-center gap-2 pt-0.5"><span class="text-[10px] uppercase tracking-wider text-blue-500/60 font-medium">Signal</span><div class="flex-1 h-1 rounded-full bg-white/5 overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style="width:${r._score}%"></div></div><span class="text-xs font-mono text-blue-400/80">${r._score}%</span></div>
       </div>
 
       ${tags.length ? `<div class="px-4 pt-3 flex flex-wrap gap-1">${tags.map(t => `<span class="badge">${t}</span>`).join('')}</div>` : ''}
 
       <div class="mt-auto p-4 flex items-center gap-2 border-t border-[#263043]/50">
         <a href="${r.html_url}" target="_blank" class="flex-1 text-center text-xs font-medium py-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all">Open GitHub</a>
-        <button data-action="track" data-repo="${r.full_name}" class="flex-1 text-center text-xs font-medium py-2 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track Project'}</button>
+        <button data-action="track" data-repo="${r.full_name}" class="flex-1 text-center text-xs font-medium py-2 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track'}</button>
+        <button data-action="compare" data-repo="${r.full_name}" class="flex-0 text-xs font-medium py-2 px-2.5 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${store.getState().compareList.includes(r.full_name) ? 'text-blue-400 border-blue-500/30' : 'text-slate-400 hover:text-blue-400'}" title="Compare">⇄</button>
+        <button data-action="timeline" data-repo="${r.full_name}" class="flex-0 text-xs font-medium py-2 px-2.5 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all text-slate-400 hover:text-blue-400" title="Timeline">📅</button>
       </div>
     </div>`
   }).join('')
@@ -155,7 +175,10 @@ function renderList(repos: EnrichedRepository[]): void {
                 <div class="flex items-center gap-1.5">
                   <a href="${r.html_url}" target="_blank" class="text-sm font-semibold text-blue-400 hover:underline truncate">${r.full_name}</a>
                   ${isTracked ? '<span class="text-[10px] text-blue-400 shrink-0">●</span>' : ''}
-                  ${r._trend ? `<span class="trend-badge ${r._trendIcon === '🔥' ? 'hot' : r._trendIcon === '🚀' ? 'rising' : 'trending'} shrink-0" style="padding:0.08rem 0.4rem 0.08rem 0.3rem;font-size:0.55rem;gap:0.2rem"><span class="trend-icon" style="font-size:0.6rem">${r._trendIcon}</span><span>${r._trendLabel}</span></span>` : ''}
+                  ${r._badges.length ? `<span class="flex gap-1 shrink-0">${r._badges.slice(0, 2).map(b => {
+                    const icons: Record<string, string> = { HOT: '🔥', RISING_STAR: '📈', EXPLODING: '🚀', HIDDEN_GEM: '💎', ESTABLISHED: '🏛' }
+                    return `<span class="badge-tag badge-tag-sm" style="--badge-hue:214;--badge-color:#58a6ff"><span class="badge-tag-icon">${icons[b] || ''}</span><span class="badge-tag-label">${b.replace('_', ' ')}</span></span>`
+                  }).join('')}</span>` : ''}
                 </div>
                 <div class="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-[280px]">${r.description || ''}</div>
               </div>
@@ -168,7 +191,7 @@ function renderList(repos: EnrichedRepository[]): void {
           <td><div class="text-xs text-slate-400">${daysSince(r.created_at)}d</div></td>
           <td><span class="text-xs font-medium ${activityClass}">${r._activity}</span></td>
           <td style="min-width:70px">
-            <div class="text-sm font-bold ${r._score >= 80 ? 'text-growth' : r._score >= 50 ? '' : 'text-slate-500'}" style="color:${r._score >= 50 ? '#FF9F43' : ''}">${r._score}/100</div>
+            <div class="text-sm font-bold ${r._score >= 80 ? 'text-growth' : r._score >= 50 ? '' : 'text-slate-500'} cursor-pointer" data-score-click="${r.full_name}" style="color:${r._score >= 50 ? '#FF9F43' : ''}">${r._score}/100</div>
             <div class="progress-score"><div class="progress-score-fill ${r._score >= 80 ? 'bg-[#22C55E]' : r._score >= 50 ? 'bg-[#FF9F43]' : 'bg-slate-600'}" style="width:${r._score}%"></div></div>
           </td>
         </tr>`
@@ -197,10 +220,11 @@ export function render(): void {
   }
 
   if (state.view === 'grid') renderCards(state.repositories)
-  else renderList(state.repositories)
+  else if (state.view === 'list') renderList(state.repositories)
+  else renderRadarMap(state.repositories, container)
 }
 
-export function switchView(view: 'grid' | 'list'): void {
+export function switchView(view: 'grid' | 'list' | 'map'): void {
   if (window.innerWidth < 768 && view === 'list') return
   const state = store.getState()
   if (state.view === view) return

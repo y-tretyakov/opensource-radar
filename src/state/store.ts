@@ -1,12 +1,18 @@
 import type { EnrichedRepository } from '../models/repository'
 
+import type { DiscoveryMode } from '../api/types'
+
+export type ViewMode = 'grid' | 'list' | 'map'
+
 export interface RadarStoreState {
-  view: 'grid' | 'list'
+  view: ViewMode
   page: number
   sortBy: string
   sortOrder: 'asc' | 'desc'
   repositories: EnrichedRepository[]
   tracked: Set<string>
+  mode: DiscoveryMode
+  compareList: string[]
 }
 
 type Listener = () => void
@@ -23,6 +29,8 @@ class Store {
       sortOrder: 'desc',
       repositories: [],
       tracked: new Set<string>(),
+      mode: 'trending',
+      compareList: [],
     }
   }
 

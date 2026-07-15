@@ -40,4 +40,5 @@ export interface FilterState {
   perPage: number;
 }
 
-export type ViewMode = 'grid' | 'list';
+export type ViewMode = 'grid' | 'list' | 'map';
+export type DiscoveryMode = 'trending' | 'hidden-gems' | 'exploding' | 'new' | 'established' | 'search' | 'tracking';

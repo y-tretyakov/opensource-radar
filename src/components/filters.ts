@@ -2,6 +2,8 @@ import type { FilterState } from '../api/types'
 import { store } from '../state/store'
 import { formatCount, getLanguageKeys } from '../utils/format'
 
+const FILTER_EXPANDED_KEY = 'osr_filter_expanded'
+
 let filterPanelOpen = false
 let onFilterChange: (() => void) | null = null
 
@@ -83,8 +85,6 @@ export function updateFilterSummary(): void {
   summary.textContent = parts.map(([, v]) => v).join(' · ')
 
   if (!chips) return
-  const active = document.getElementById('filterPanel')?.classList.contains('open') || window.innerWidth >= 768
-  if (!active) { chips.innerHTML = ''; return }
 
   chips.innerHTML = parts.map(([label, value]) =>
     `<span class="filter-chip"><span>${label}: ${value}</span><button data-chip="${label}" aria-label="Remove ${label} filter">✕</button></span>`
@@ -129,17 +129,29 @@ export function resetFilters(): void {
   onFilterChange?.()
 }
 
+export function initFilterPanel(): void {
+  filterPanelOpen = localStorage.getItem(FILTER_EXPANDED_KEY) === 'true'
+  const panel = document.getElementById('filterPanel')
+  const toggleBtn = document.getElementById('filterToggleBtn')
+
+  if (filterPanelOpen) {
+    panel?.classList.add('open')
+    toggleBtn?.classList.add('text-blue-400', 'open')
+  }
+}
+
 export function toggleFilters(): void {
   filterPanelOpen = !filterPanelOpen
   const panel = document.getElementById('filterPanel')
   const toggleBtn = document.getElementById('filterToggleBtn')
+
   if (panel) panel.classList.toggle('open', filterPanelOpen)
   if (toggleBtn) toggleBtn.classList.toggle('text-blue-400', filterPanelOpen)
+  if (toggleBtn) toggleBtn.classList.toggle('open', filterPanelOpen)
+
+  localStorage.setItem(FILTER_EXPANDED_KEY, String(filterPanelOpen))
+
   if (filterPanelOpen) updateFilterSummary()
-  else {
-    const chips = document.getElementById('filterChips')
-    if (chips) chips.innerHTML = ''
-  }
 }
 
 export function populateLanguages(): void {

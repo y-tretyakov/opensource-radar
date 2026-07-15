@@ -57,13 +57,16 @@
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
                     <span id="filterSummary" class="truncate">★ 10–1k · 30d · All</span>
                 </div>
-                <button id="filterToggleBtn" class="text-xs font-medium text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0 md:hidden">
+                <button id="filterToggleBtn" class="text-xs font-medium text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
-                    Filters
+                    <span id="filterToggleText">Filters</span>
+                    <svg id="filterToggleChevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="transition-transform duration-200"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
             </div>
 
-            <div id="filterPanel" class="filter-panel md:!max-h-none md:!opacity-100">
+            <div id="filterChips" class="flex flex-wrap items-center gap-1.5 mt-3 min-h-[22px]"></div>
+
+            <div id="filterPanel" class="filter-panel">
                 <div class="mt-4 pt-4 border-t border-[#263043]/50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
                     <div class="sm:col-span-2 lg:col-span-1">
@@ -125,8 +128,6 @@
                     </div>
 
                 </div>
-
-                <div id="filterChips" class="flex flex-wrap items-center gap-1.5 mt-3 min-h-[22px]"></div>
             </div>
         </section>
 

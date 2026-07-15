@@ -583,3 +583,23 @@ input[type="range"] { accent-color: #1f6feb; }
   .filter-panel { max-height: 0; }
   .filter-panel.open { max-height: 600px; }
 }
+
+/* ===== Insight Toggle ===== */
+.insight-container {
+  user-select: none;
+}
+
+.insight-toggle {
+  transition: all 0.2s;
+  &:hover { opacity: 0.8; }
+}
+
+.insight-panel {
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+
+.insight-container.expanded {
+  .insight-panel { display: block; }
+  .insight-chevron { transform: rotate(90deg); }
+}

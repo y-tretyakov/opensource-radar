@@ -9,6 +9,7 @@ import { showBreakdown } from './features/scoring/breakdown'
 import { showTimeline } from './features/timeline/timeline'
 import { toggleCompare, clearCompare, showCompare } from './features/compare/compare'
 import {
+  initFilterPanel,
   populateLanguages,
   updateFilterSummary,
   setDepth,
@@ -46,6 +47,14 @@ function handleResultClick(e: MouseEvent): void {
 
     if (action === 'compare') {
       toggleCompare(repo)
+      return
+    }
+
+    if (action === 'insight-toggle') {
+      const container = actionBtn.closest('.insight-container') as HTMLElement | null
+      if (container) {
+        container.classList.toggle('expanded')
+      }
       return
     }
   }
@@ -137,6 +146,7 @@ document.addEventListener('error', (e: Event) => {
 
 populateLanguages()
 updateFilterSummary()
+initFilterPanel()
 initTabs()
 updateTabs()
 fetchRepos()

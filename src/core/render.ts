@@ -6,8 +6,6 @@ import { saveTracked } from '../utils/storage'
 import { renderBadges } from '../features/scoring/badge-display'
 import { renderWhyInteresting } from '../features/scoring/reasons'
 import { renderRadarMap } from '../features/radar-map/map'
-import { insightEngine, repoToInsightData } from '../features/insights'
-
 function observeScroll(): void {
   const els = document.querySelectorAll('.scroll-reveal')
   if (!els.length) return
@@ -58,7 +56,7 @@ function renderCards(repos: EnrichedRepository[]): void {
   container.className = 'card-grid results-container'
   container.innerHTML = repos.map(r => {
     const isTracked = tracked.has(r.full_name)
-    const tags = (r.topics || []).slice(0, 5)
+    const tags = (r.topics || [])
 
     const name = escapeHtml(r.full_name)
     const desc = escapeHtml(r.description || 'No description')
@@ -67,60 +65,90 @@ function renderCards(repos: EnrichedRepository[]): void {
     const htmlUrl = escapeHtml(r.html_url)
     const avatarUrl = escapeHtml(r.owner.avatar_url)
 
+    const visibleTags = tags.slice(0, 4)
+    const remainingTags = tags.length - 4
+
     return `<div class="scroll-reveal glass-card rounded-2xl flex flex-col overflow-hidden shadow-lg">
-      <div class="p-4 flex items-start gap-3 border-b border-[#263043]/50">
-        <img src="${avatarUrl}" alt="" class="w-10 h-10 rounded-xl bg-slate-800 shrink-0" loading="lazy">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2">
-            <a href="${htmlUrl}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate block">${name}</a>
-            <span class="track-btn text-xs px-2 py-0.5 rounded-full border ${isTracked ? 'tracked' : 'border-slate-700 text-slate-500 hover:border-slate-500'}" data-action="track" data-repo="${name}">${isTracked ? '✓ Tracked' : '+ Track'}</span>
+      <!-- R1: Header 72px -->
+      <div class="px-4 pt-4 pb-3 border-b border-[#263043]/50 h-[72px] overflow-hidden">
+        <div class="flex items-start gap-3">
+          <img src="${avatarUrl}" alt="" class="w-10 h-10 rounded-xl bg-slate-800 shrink-0" loading="lazy">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-2">
+              <a href="${htmlUrl}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate block">${name}</a>
+              <span class="track-btn text-xs px-2 py-0.5 rounded-full border shrink-0 ${isTracked ? 'tracked' : 'border-slate-700 text-slate-500 hover:border-slate-500'}" data-action="track" data-repo="${name}">${isTracked ? '✓ Tracked' : '+ Track'}</span>
+            </div>
           </div>
-          <p class="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">${desc}</p>
         </div>
       </div>
 
-      ${r._badges.length ? `<div class="px-4 pt-2.5 flex justify-center">${renderBadges(r._badges)}</div>` : ''}
-
-      <div class="px-4 pt-2 text-[11px] text-slate-500 italic leading-relaxed insight-summary">${(() => {
-        const data = repoToInsightData(r)
-        return insightEngine.analyze(data).summary
-      })()}</div>
-
-      <div class="px-4 pt-3 grid grid-cols-4 gap-2">
-        <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
-        <div><div class="stat-label">Growth</div><div class="stat-value text-growth">+${formatCount(r._weeklyGrowth)}</div></div>
-        <div><div class="stat-label">Forks</div><div class="stat-value">${formatCount(r.forks_count)}</div></div>
-        <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${lang}</div></div>
+      <!-- R2: Description 52px -->
+      <div class="px-4 pt-3 pb-0 h-[52px] overflow-hidden">
+        <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${desc}</p>
       </div>
 
-      <div class="px-4 pt-2.5 flex items-center gap-2 cursor-pointer" data-score-click="${name}">
-        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-          <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style="width:${r._score}%"></div>
+      <!-- R3: Badge 28px -->
+      <div class="px-4 pt-3 pb-0 h-[28px] flex items-center justify-center overflow-hidden">
+        ${r._badges.length ? renderBadges(r._badges) : ''}
+      </div>
+
+      <!-- R4: Radar Score 24px -->
+      <div class="px-4 pt-3 pb-0 h-[24px] overflow-hidden">
+        <div class="flex items-center gap-2 cursor-pointer" data-score-click="${name}">
+          <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style="width:${r._score}%"></div>
+          </div>
+          <span class="text-xs font-mono text-blue-400/80 font-bold">${r._score}<span class="text-slate-600 font-normal">/100</span></span>
         </div>
-        <span class="text-xs font-mono text-blue-400/80 font-bold">${r._score}<span class="text-slate-600 font-normal">/100</span></span>
-      </div>
-      <div class="px-4 pb-1">
-        <span class="text-[10px] font-medium ${r._score >= 75 ? 'text-growth' : r._score >= 60 ? 'text-alert' : 'text-slate-500'}">${escapeHtml(r._scoreDescription)}</span>
-        <span class="text-[10px] text-slate-600 mx-1">·</span>
-        <span class="text-[10px] text-slate-500">${escapeHtml(r._classification)}</span>
       </div>
 
-      ${renderWhyInteresting(r)}
-
-      <div class="px-4 pt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
-        <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
-        <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
-        <div><span class="text-slate-600">License</span> <span class="text-slate-300">${license}</span></div>
-        <div><span class="text-slate-600">Size</span> <span class="text-slate-300">${(r.size / 1024).toFixed(1)} MB</span></div>
+      <!-- R5: Classification 24px -->
+      <div class="px-4 pt-1 pb-0 h-[24px] overflow-hidden">
+        <div class="flex items-center">
+          <span class="text-[10px] font-medium ${r._score >= 75 ? 'text-growth' : r._score >= 60 ? 'text-alert' : 'text-slate-500'}">${escapeHtml(r._scoreDescription)}</span>
+          <span class="text-[10px] text-slate-600 mx-1">·</span>
+          <span class="text-[10px] text-slate-500 truncate">${escapeHtml(r._classification)}</span>
+        </div>
       </div>
 
-      ${tags.length ? `<div class="px-4 pt-3 flex flex-wrap gap-1">${tags.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      <!-- R6: Metrics 68px -->
+      <div class="px-4 pt-3 pb-0 h-[68px] overflow-hidden">
+        <div class="grid grid-cols-4 gap-2">
+          <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
+          <div><div class="stat-label">Growth</div><div class="stat-value text-growth">+${formatCount(r._weeklyGrowth)}</div></div>
+          <div><div class="stat-label">Forks</div><div class="stat-value">${formatCount(r.forks_count)}</div></div>
+          <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${lang}</div></div>
+        </div>
+      </div>
 
-      <div class="mt-auto p-4 flex items-center gap-2 border-t border-[#263043]/50">
-        <a href="${htmlUrl}" target="_blank" class="flex-1 text-center text-xs font-medium py-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all">Open GitHub</a>
-        <button data-action="track" data-repo="${name}" class="flex-1 text-center text-xs font-medium py-2 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track'}</button>
-        <button data-action="compare" data-repo="${name}" class="flex-0 text-xs font-medium py-2 px-2.5 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${store.getState().compareList.includes(r.full_name) ? 'text-blue-400 border-blue-500/30' : 'text-slate-400 hover:text-blue-400'}" title="Compare">⇄</button>
-        <button data-action="timeline" data-repo="${name}" class="flex-0 text-xs font-medium py-2 px-2.5 rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all text-slate-400 hover:text-blue-400" title="Timeline">📅</button>
+      <!-- R7: Insight Preview — min-height to allow expansion -->
+      <div class="px-4 pt-3 pb-0 min-h-[40px]">
+        ${renderWhyInteresting(r)}
+      </div>
+
+      <!-- R8: Dates 44px -->
+      <div class="px-4 pt-3 pb-0 h-[44px] overflow-hidden">
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
+          <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
+          <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
+          <div><span class="text-slate-600">License</span> <span class="text-slate-300">${license}</span></div>
+          <div><span class="text-slate-600">Size</span> <span class="text-slate-300">${(r.size / 1024).toFixed(1)} MB</span></div>
+        </div>
+      </div>
+
+      <!-- R9: Tags 40px — max 4 visible -->
+      <div class="px-4 pt-3 pb-0 h-[40px] overflow-hidden">
+        ${tags.length ? `<div class="flex flex-wrap gap-1">${visibleTags.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join('')}${remainingTags > 0 ? `<span class="badge badge-overflow">+${remainingTags}</span>` : ''}</div>` : ''}
+      </div>
+
+      <!-- R10: Actions 56px -->
+      <div class="mt-auto p-4 border-t border-[#263043]/50 h-[56px]">
+        <div class="grid grid-cols-4 gap-2 h-full">
+          <a href="${htmlUrl}" target="_blank" class="flex items-center justify-center text-center text-xs font-medium rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all">Open GitHub</a>
+          <button data-action="track" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track'}</button>
+          <button data-action="compare" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${store.getState().compareList.includes(r.full_name) ? 'text-blue-400 border-blue-500/30' : 'text-slate-400 hover:text-blue-400'}" title="Compare">⇄</button>
+          <button data-action="timeline" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all text-slate-400 hover:text-blue-400" title="Timeline">📅</button>
+        </div>
       </div>
     </div>`
   }).join('')

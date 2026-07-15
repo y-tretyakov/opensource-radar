@@ -9,6 +9,10 @@ export function setOnFilterChange(fn: () => void): void {
   onFilterChange = fn
 }
 
+function clamp(val: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, val))
+}
+
 export function getFilters(): FilterState {
   const topicInput = document.getElementById('topic') as HTMLInputElement
   const starsFrom = document.getElementById('starsFrom') as HTMLInputElement
@@ -18,15 +22,20 @@ export function getFilters(): FilterState {
   const sort = document.getElementById('sort') as HTMLSelectElement
   const perPage = document.getElementById('perPage') as HTMLSelectElement
 
+  const parsedStarsFrom = parseInt(starsFrom?.value)
+  const parsedStarsTo = parseInt(starsTo?.value)
+  const parsedDays = parseInt(days?.value)
+  const parsedPerPage = parseInt(perPage?.value)
+
   return {
     topic: topicInput?.value.trim() || 'TUI',
-    starsFrom: parseInt(starsFrom?.value) || 0,
-    starsTo: parseInt(starsTo?.value) || 1000000,
-    days: parseInt(days?.value) || 30,
+    starsFrom: Number.isFinite(parsedStarsFrom) ? clamp(parsedStarsFrom, 0, 1000000) : 0,
+    starsTo: Number.isFinite(parsedStarsTo) ? clamp(parsedStarsTo, 0, 1000000) : 1000000,
+    days: Number.isFinite(parsedDays) ? clamp(parsedDays, 1, 3650) : 30,
     language: language?.value || '',
     sort: sort?.value || 'stars',
     order: store.getState().sortOrder,
-    perPage: parseInt(perPage?.value) || 25,
+    perPage: Number.isFinite(parsedPerPage) ? clamp(parsedPerPage, 1, 100) : 25,
   }
 }
 

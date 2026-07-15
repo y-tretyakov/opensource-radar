@@ -26,3 +26,7 @@ export function langColor(lang: string | null): string {
 export function getLanguageKeys(): string[] {
   return Object.keys(COLORS).sort()
 }
+
+export function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}

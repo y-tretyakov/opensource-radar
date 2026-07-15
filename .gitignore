@@ -1,2 +1,5 @@
 node_modules
 dist
+.agent-state/
+AGENTS.md
+docs/RADAR_PRO_*.md

@@ -1,6 +1,7 @@
 import { store } from '../../state/store'
 import type { EnrichedRepository } from '../../models/repository'
 import type { ScoreComponent } from '../scoring/types'
+import { escapeHtml } from '../../utils/format'
 
 const COMPONENT_META: Record<string, { label: string; color: string; key: string }> = {
   growth: { label: 'Growth', color: '#22C55E', key: 'growth' },
@@ -124,8 +125,8 @@ function renderCompareModal(repos: EnrichedRepository[]): string {
               <tr>
                 <th class="compare-label-th">Metric</th>
                 ${repos.map(r => `<th class="compare-repo-th">
-                  <div class="compare-repo-name">${r.full_name.split('/')[1]}</div>
-                  <div class="compare-repo-owner">${r.owner.login}</div>
+                  <div class="compare-repo-name">${escapeHtml(r.full_name.split('/')[1])}</div>
+                  <div class="compare-repo-owner">${escapeHtml(r.owner.login)}</div>
                   <div class="compare-repo-stars">⭐ ${r.stargazers_count.toLocaleString()}</div>
                 </th>`).join('')}
               </tr>

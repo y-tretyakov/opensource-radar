@@ -1,6 +1,6 @@
 import { store } from '../../state/store'
 import type { EnrichedRepository } from '../../models/repository'
-import { formatCount } from '../../utils/format'
+import { formatCount, escapeHtml } from '../../utils/format'
 import { loadSnapshots, saveSnapshot, saveSnapshots, type RepoSnapshot } from '../../utils/storage'
 
 export interface TrackEvent {
@@ -76,17 +76,20 @@ export function renderTrackingDashboard(): string {
       ${repos.map(r => {
         const old = snapshots[r.full_name]
         const events = detectEvents(r.full_name, r, old)
+        const repoName = escapeHtml(r.full_name)
+        const repoDesc = escapeHtml(r.description || '')
+        const repoUrl = escapeHtml(r.html_url)
         return `
           <div class="glass-card rounded-2xl p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                  <a href="${r.html_url}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate">${r.full_name}</a>
+                  <a href="${repoUrl}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate">${repoName}</a>
                   <span class="text-xs font-mono text-blue-400/80">${r._score}/100</span>
                 </div>
-                <div class="text-xs text-slate-500 mt-0.5">${r.description || ''}</div>
+                <div class="text-xs text-slate-500 mt-0.5">${repoDesc}</div>
               </div>
-              <button data-action="track" data-repo="${r.full_name}" class="track-btn text-xs px-2 py-0.5 rounded-full border border-blue-500/30 text-blue-400 hover:bg-blue-500/10">Tracked</button>
+              <button data-action="track" data-repo="${repoName}" class="track-btn text-xs px-2 py-0.5 rounded-full border border-blue-500/30 text-blue-400 hover:bg-blue-500/10">Tracked</button>
             </div>
 
             <div class="mt-3 grid grid-cols-4 gap-2 text-xs">

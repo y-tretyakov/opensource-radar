@@ -35,13 +35,17 @@ function findPoint(points: Point[], mx: number, my: number): Point | null {
   return null
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 function updateTooltip(tooltip: HTMLElement, hovered: Point, mx: number, my: number, w: number, h: number): void {
   const r = hovered.repo
   tooltip.innerHTML = `
-    <div class="radar-tooltip-name">${r.full_name}</div>
+    <div class="radar-tooltip-name">${escapeHtml(r.full_name)}</div>
     <div class="radar-tooltip-stat">⭐ ${r.stargazers_count.toLocaleString()} stars</div>
     <div class="radar-tooltip-stat">📈 +${r._weeklyGrowth}/week</div>
-    <div class="radar-tooltip-stat">🏷 ${r.language || '—'} · ${r._classification}</div>
+    <div class="radar-tooltip-stat">🏷 ${escapeHtml(r.language || '—')} · ${escapeHtml(r._classification)}</div>
     <div class="radar-tooltip-score">Score: ${r._score}/100</div>`
   tooltip.classList.remove('hidden')
 

@@ -1,4 +1,5 @@
 import type { EnrichedRepository } from '../../models/repository'
+import { escapeHtml } from '../../utils/format'
 
 interface Milestone {
   date: string
@@ -70,7 +71,7 @@ export function renderTimeline(repo: EnrichedRepository): string {
       <div class="breakdown-modal" style="max-width:480px">
         <div class="breakdown-modal-header">
           <div class="breakdown-modal-title">
-            <span class="breakdown-modal-name">${repo.full_name}</span>
+            <span class="breakdown-modal-name">${escapeHtml(repo.full_name)}</span>
             <span class="breakdown-modal-score">Project Timeline</span>
           </div>
           <button id="timelineClose" class="breakdown-close">✕</button>

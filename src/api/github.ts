@@ -11,6 +11,8 @@ import { cacheGet, cacheSet } from '../utils/cache'
 const API_BASE = 'https://api.github.com/search/repositories'
 const CACHE_TTL = 4 * 60 * 1000
 
+const inflightRequests = new Map<string, Promise<{ repos: EnrichedRepository[]; totalCount: number }>>()
+
 function buildQuery(f: FilterState, mode: DiscoveryMode): string {
   if (mode !== 'search') {
     const config = getMode(mode)
@@ -41,16 +43,27 @@ export async function searchRepositories(
   const cached = cacheGet<{ repos: EnrichedRepository[]; totalCount: number }>(cacheKey)
   if (cached) return cached
 
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('API Error ' + res.status)
+  const inflight = inflightRequests.get(cacheKey)
+  if (inflight) return inflight
 
-  const data: GitHubSearchResponse = await res.json()
-  const repos = (data.items || []).map(enrichRepo)
-  const result = { repos, totalCount: data.total_count }
+  const promise = (async () => {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('API Error ' + res.status)
 
-  cacheSet(cacheKey, result, CACHE_TTL)
+    const data: GitHubSearchResponse = await res.json()
+    const repos = (data.items || []).map(enrichRepo)
+    const result = { repos, totalCount: data.total_count }
 
-  return result
+    cacheSet(cacheKey, result, CACHE_TTL)
+    return result
+  })()
+
+  inflightRequests.set(cacheKey, promise)
+  try {
+    return await promise
+  } finally {
+    inflightRequests.delete(cacheKey)
+  }
 }
 
 export async function fetchRepos(): Promise<void> {

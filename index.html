@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenSource Radar | Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #0b0f19; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+
+        .glass { background: rgba(17,25,40,0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+        .glass-card { background: rgba(17,25,40,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
+        .glass-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: 0 8px 32px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.05); transform: translateY(-2px); }
+
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+
+        .scroll-reveal { opacity: 0; transform: translateY(24px); transition: all 0.55s cubic-bezier(0.16,1,0.3,1); }
+        .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+
+        .results-container { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .results-container.switching { opacity: 0; transform: scale(0.96); pointer-events: none; }
+
+        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 500; background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.15); white-space: nowrap; }
+
+        .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 600; }
+        .stat-value { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
+
+        .trend-hot { color: #f97316; }
+        .trend-rising { color: #22d3ee; }
+        .trend-trending { color: #a78bfa; }
+
+        .lang-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; flex-shrink: 0; }
+
+        .activity-active { color: #22c55e; }
+        .activity-slow { color: #eab308; }
+        .activity-archived { color: #ef4444; }
+
+        .sparkline-svg { width: 100%; height: 24px; }
+        .sparkline-svg path { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+        .track-btn { cursor: pointer; transition: all 0.2s; }
+        .track-btn.tracked { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #818cf8; }
+
+        .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+        table.sortable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        table.sortable th { padding: 0.75rem; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; cursor: pointer; user-select: none; background: rgba(17,25,40,0.4); position: sticky; top: 0; z-index: 2; }
+        table.sortable th:hover { color: #94a3b8; }
+        table.sortable th .sort-arrow { margin-left: 4px; opacity: 0.3; }
+        table.sortable th.sort-active .sort-arrow { opacity: 1; color: #818cf8; }
+        table.sortable td { padding: 0.7rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+        table.sortable tr:hover td { background: rgba(99,102,241,0.03); }
+        table.sortable tr:last-child td { border-bottom: none; }
+
+        .progress-score { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 2px; overflow: hidden; }
+        .progress-score-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+
+        .view-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; transition: all 0.25s ease; background: transparent; border: none; cursor: pointer; color: #64748b; }
+        .view-btn:hover { color: #94a3b8; background: rgba(255,255,255,0.04); }
+        .view-btn.active { color: #818cf8; background: rgba(99,102,241,0.15); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        input, select { outline: none; }
+        input:focus, select:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+
+        @media (max-width: 767px) {
+            .card-grid { grid-template-columns: 1fr; }
+            .scroll-reveal { transform: translateY(16px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <header class="glass sticky top-0 z-50 px-4 sm:px-6 lg:px-8" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div class="max-w-7xl mx-auto h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent tracking-tight">Radar</span>
+                <span class="hidden sm:inline text-[0.65rem] uppercase tracking-widest text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-800">Pro</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+        <section class="glass rounded-2xl p-4 sm:p-6 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <input id="topic" type="text" placeholder="Tag (e.g. TUI)" value="TUI" class="lg:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-200 placeholder-slate-600 transition">
+                <input id="starsFrom" type="number" min="10" max="1000000" value="10" class="px-3 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-200 transition">
+                <input id="starsTo" type="number" min="10" max="1000000" value="50" class="px-3 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-200 transition">
+                <select id="perPage" class="px-3 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-200 transition">
+                    <option value="10">10/page</option>
+                    <option value="25" selected>25/page</option>
+                    <option value="50">50/page</option>
+                </select>
+                <button onclick="resetAndFetch()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold transition-all active:scale-95">Search</button>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                <span>Depth: <span id="daysVal" class="text-slate-300 font-mono">30</span>d</span>
+                <input id="days" type="range" min="7" max="365" value="30" class="w-32 accent-indigo-500" oninput="document.getElementById('daysVal').innerText = this.value">
+                <span id="resultCount" class="ml-auto text-slate-600"></span>
+            </div>
+        </section>
+
+        <div id="viewToggleBar" class="hidden md:flex items-center justify-end mb-3 gap-2">
+            <div class="flex items-center gap-1 p-1 rounded-xl glass" style="border-color:rgba(255,255,255,0.04)">
+                <button onclick="switchView('grid')" id="btn-grid" class="view-btn active" title="Card view">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1"/>
+                        <rect x="9" y="1.5" width="5.5" height="5.5" rx="1"/>
+                        <rect x="1.5" y="9" width="5.5" height="5.5" rx="1"/>
+                        <rect x="9" y="9" width="5.5" height="5.5" rx="1"/>
+                    </svg>
+                </button>
+                <button onclick="switchView('list')" id="btn-list" class="view-btn" title="List view">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="2" y1="3.5" x2="14" y2="3.5"/>
+                        <line x1="2" y1="8" x2="14" y2="8"/>
+                        <line x1="2" y1="12.5" x2="14" y2="12.5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="results" class="card-grid results-container"></div>
+
+        <div id="pagination" class="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-slate-800/50 hidden">
+            <button onclick="changePage(-1)" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-indigo-500/30 transition-all" style="border-color:rgba(255,255,255,0.06)">← Back</button>
+            <span id="pageInfo" class="self-center text-sm font-mono text-slate-400">1</span>
+            <button onclick="changePage(1)" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-indigo-500/30 transition-all" style="border-color:rgba(255,255,255,0.06)">Next →</button>
+        </div>
+    </main>
+
+    <script>
+        const COLORS = {
+            'JavaScript': '#f7df1e', 'TypeScript': '#3178c6', 'Python': '#3572A5', 'Go': '#00ADD8',
+            'Rust': '#dea584', 'C': '#555555', 'C++': '#f34b7d', 'Java': '#b07219', 'Kotlin': '#A97BFF',
+            'Ruby': '#701516', 'PHP': '#4F5D95', 'Swift': '#F05138', 'Scala': '#c22d40', 'Dart': '#00B4AB',
+            'Elixir': '#4e2a59', 'Clojure': '#db5855', 'Haskell': '#5e5086', 'Lua': '#000080',
+            'Zig': '#ec915c', 'Nim': '#ffc200', 'Shell': '#89e051', 'HTML': '#e34f26', 'CSS': '#563d7c',
+            'Crystal': '#000100', 'OCaml': '#3be133', 'Solidity': '#363636', 'R': '#198CE7',
+        };
+        const DEFAULT_LANG_COLOR = '#64748b';
+
+        let state = { view: 'grid', page: 1, sortBy: 'stars', sortOrder: 'desc', repos: [], tracked: new Set() };
+
+        try {
+            const t = JSON.parse(localStorage.getItem('osr_tracked') || '[]');
+            state.tracked = new Set(t);
+        } catch(e) {}
+
+        function saveTracked() { localStorage.setItem('osr_tracked', JSON.stringify([...state.tracked])); }
+
+        function formatCount(n) {
+            if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            return String(n);
+        }
+
+        function formatInt(n) { return Number(n).toLocaleString(); }
+
+        function timeAgo(dateStr) {
+            const d = new Date(dateStr);
+            const sec = (Date.now() - d.getTime()) / 1000;
+            if (sec < 60) return 'moments ago';
+            const min = sec / 60; if (min < 60) return Math.floor(min) + 'm ago';
+            const hr = min / 60; if (hr < 24) return Math.floor(hr) + 'h ago';
+            const days = hr / 24;
+            if (days < 30) return Math.floor(days) + 'd ago';
+            if (days < 365) return Math.floor(days / 30) + 'mo ago';
+            return Math.floor(days / 365) + 'y ago';
+        }
+
+        function daysSince(dateStr) {
+            return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        function enrichRepo(r) {
+            const ageDays = daysSince(r.created_at) || 1;
+            const growthPerDay = r.stargazers_count / ageDays;
+            const weeklyGrowth = Math.round(growthPerDay * 7);
+
+            let trend = '';
+            const gpd = growthPerDay;
+            if (gpd > 50) trend = '🔥 Hot';
+            else if (gpd > 20) trend = '🚀 Rising Star';
+            else if (gpd > 5) trend = '↗ Trending';
+
+            let activity = '🟢 Active';
+            const daysSinceUpdate = daysSince(r.pushed_at);
+            if (daysSinceUpdate > 365) activity = '🔴 Archived';
+            else if (daysSinceUpdate > 90) activity = '🟡 Slow';
+
+            const starScore = Math.min(40, Math.round(Math.log10(r.stargazers_count + 1) * 12));
+            const growthScore = Math.min(25, Math.round(growthPerDay * 2));
+            const activityScore = Math.min(20, Math.max(0, 20 - Math.floor(daysSinceUpdate / 18)));
+            const forkScore = Math.min(10, Math.round(Math.log10(r.forks_count + 1) * 4));
+            const descScore = (r.description && r.description.length > 10) ? 5 : 0;
+            const score = Math.min(100, starScore + growthScore + activityScore + forkScore + descScore);
+
+            return { ...r, _ageDays: ageDays, _growthPerDay: gpd, _weeklyGrowth: weeklyGrowth, _trend: trend, _activity: activity, _score: score, _trendLabel: trend.split(' ').slice(1).join(' ') || trend, _trendIcon: trend.split(' ')[0] || '' };
+        }
+
+        function generateSparklineHTML(repo) {
+            const count = 20;
+            const pts = [];
+            for (let i = 0; i < count; i++) {
+                const t = (i + 1) / count;
+                const raw = repo.stargazers_count / (1 + Math.exp(-10 * (t - 0.5)));
+                pts.push(raw);
+            }
+            const max = Math.max(...pts, 1);
+            const w = 120, h = 24, pad = 2;
+            const xStep = (w - pad * 2) / (count - 1);
+            const d = pts.map((v, i) => {
+                const x = pad + i * xStep;
+                const y = h - pad - (v / max) * (h - pad * 2);
+                return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+            const hue = repo._growthPerDay > 20 ? '142' : repo._growthPerDay > 5 ? '99' : '217';
+            return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}"><path d="${d}" stroke="hsla(${hue},70%,55%,0.8)" fill="none" stroke-width="1.5"/><path d="${d}" stroke="hsla(${hue},70%,55%,0.15)" fill="none" stroke-width="6" transform="translate(0,2)"/></svg>`;
+        }
+
+        function langColor(lang) { return COLORS[lang] || DEFAULT_LANG_COLOR; }
+
+        function updateToggleButtons() {
+            const g = document.getElementById('btn-grid');
+            const l = document.getElementById('btn-list');
+            if (g) g.className = 'view-btn' + (state.view === 'grid' ? ' active' : '');
+            if (l) l.className = 'view-btn' + (state.view === 'list' ? ' active' : '');
+        }
+
+        function switchView(view) {
+            if (window.innerWidth < 768 && view === 'list') return;
+            if (state.view === view) return;
+            const container = document.getElementById('results');
+            container.classList.add('switching');
+            updateToggleButtons();
+            setTimeout(() => {
+                state.view = view;
+                container.classList.remove('switching');
+                render();
+            }, 180);
+        }
+
+        function resetAndFetch() { state.page = 1; fetchRepos(); }
+
+        function changePage(delta) {
+            state.page = Math.max(1, state.page + delta);
+            fetchRepos();
+        }
+
+        async function fetchRepos() {
+            const topic = document.getElementById('topic').value.trim() || 'TUI';
+            const sFrom = document.getElementById('starsFrom').value;
+            const sTo = document.getElementById('starsTo').value;
+            const perPage = document.getElementById('perPage').value;
+            const days = document.getElementById('days').value;
+            const container = document.getElementById('results');
+
+            const date = new Date();
+            date.setDate(date.getDate() - days);
+
+            const url = `https://api.github.com/search/repositories?q=topic:${topic}+created:>=${date.toISOString().split('T')[0]}+stars:${sFrom}..${sTo}&sort=stars&order=desc&per_page=${perPage}&page=${state.page}`;
+
+            container.innerHTML = '<div class="col-span-full text-center py-24"><div class="inline-block w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div><p class="mt-3 text-sm text-slate-500">Loading...</p></div>';
+
+            document.getElementById('viewToggleBar')?.classList.add('hidden');
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API Error ' + res.status);
+                const data = await res.json();
+
+                const repos = (data.items || []).map(enrichRepo);
+                state.repos = repos;
+                document.getElementById('resultCount').textContent = repos.length ? `${data.total_count.toLocaleString()} found` : '';
+
+                document.getElementById('pagination').classList.toggle('hidden', !repos.length);
+                document.getElementById('pageInfo').innerText = `Page ${state.page}`;
+
+                if (repos.length) document.getElementById('viewToggleBar')?.classList.remove('hidden');
+
+                render();
+            } catch (err) {
+                container.innerHTML = '<div class="col-span-full text-center py-24 text-sm text-red-400">API error — rate limited?<br><span class="text-slate-500 text-xs mt-2 block">Try again in a minute</span></div>';
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('results');
+            if (!state.repos.length) {
+                container.innerHTML = '<div class="col-span-full text-center py-24 text-sm text-slate-500">Nothing found</div>';
+                return;
+            }
+            if (state.view === 'grid') renderCards(container);
+            else renderList(container);
+        }
+
+        function renderCards(container) {
+            container.className = 'card-grid results-container';
+            container.innerHTML = state.repos.map(r => {
+                const tracked = state.tracked.has(r.full_name);
+                const tags = (r.topics || []).slice(0, 5);
+
+                return `<div class="scroll-reveal glass-card rounded-2xl flex flex-col overflow-hidden shadow-lg">
+                    <div class="p-4 flex items-start gap-3 border-b border-white/[0.03]">
+                        <img src="${r.owner.avatar_url}" alt="" class="w-10 h-10 rounded-xl bg-slate-800 shrink-0" loading="lazy" onerror="this.src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <a href="${r.html_url}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate block">${r.full_name}</a>
+                                <span class="track-btn text-xs px-2 py-0.5 rounded-full border ${tracked ? 'tracked' : 'border-slate-700 text-slate-500 hover:border-slate-500'}" onclick="toggleTrack('${r.full_name}',this)">${tracked ? '✓ Tracked' : '+ Track'}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">${r.description || 'No description'}</p>
+                        </div>
+                    </div>
+
+                    ${r._trend ? `<div class="px-4 pt-3 flex items-center gap-1.5 text-xs font-medium"><span class="${r._trendIcon === '🔥' ? 'trend-hot' : r._trendIcon === '🚀' ? 'trend-rising' : 'trend-trending'}">${r._trendIcon}</span><span class="text-slate-400">${r._trendLabel || r._trend}</span></div>` : ''}
+
+                    <div class="px-4 pt-3 grid grid-cols-4 gap-2">
+                        <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
+                        <div><div class="stat-label">Growth</div><div class="stat-value text-emerald-400">+${formatCount(r._weeklyGrowth)}</div></div>
+                        <div><div class="stat-label">Forks</div><div class="stat-value">${formatCount(r.forks_count)}</div></div>
+                        <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${r.language || '—'}</div></div>
+                    </div>
+
+                    <div class="px-4 pt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
+                        <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
+                        <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
+                        <div><span class="text-slate-600">License</span> <span class="text-slate-300">${r.license?.spdx_id || '—'}</span></div>
+                        <div><span class="text-slate-600">Size</span> <span class="text-slate-300">${(r.size / 1024).toFixed(1)} MB</span></div>
+                    </div>
+
+                    ${tags.length ? `<div class="px-4 pt-3 flex flex-wrap gap-1">${tags.map(t => `<span class="badge">${t}</span>`).join('')}</div>` : ''}
+
+                    <div class="mt-auto p-4 flex items-center gap-2 border-t border-white/[0.03]">
+                        <a href="${r.html_url}" target="_blank" class="flex-1 text-center text-xs font-medium py-2 rounded-xl bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600/20 border border-indigo-600/20 transition-all">Open GitHub</a>
+                        <button onclick="toggleTrack('${r.full_name}')" class="flex-1 text-center text-xs font-medium py-2 rounded-xl glass border-slate-700/50 hover:border-indigo-500/30 transition-all ${tracked ? 'text-indigo-400' : 'text-slate-400'}">${tracked ? 'Tracked' : 'Track Project'}</button>
+                    </div>
+                </div>`;
+            }).join('');
+            observeScroll();
+        }
+
+        function renderList(container) {
+            container.className = 'results-container';
+            const sortArrow = (field) => state.sortBy === field ? (state.sortOrder === 'desc' ? '▼' : '▲') : '';
+
+            const sorted = [...state.repos].sort((a, b) => {
+                let va, vb;
+                switch (state.sortBy) {
+                    case 'stars': va = a.stargazers_count; vb = b.stargazers_count; break;
+                    case 'growth': va = a._growthPerDay; vb = b._growthPerDay; break;
+                    case 'forks': va = a.forks_count; vb = b.forks_count; break;
+                    case 'created': va = new Date(a.created_at); vb = new Date(b.created_at); break;
+                    case 'score': va = a._score; vb = b._score; break;
+                    case 'name': va = a.full_name.toLowerCase(); vb = b.full_name.toLowerCase(); break;
+                    case 'activity': va = daysSince(a.pushed_at); vb = daysSince(b.pushed_at); break;
+                    case 'language': va = a.language || ''; vb = b.language || ''; break;
+                    default: va = a.stargazers_count; vb = b.stargazers_count;
+                }
+                if (va < vb) return state.sortOrder === 'asc' ? -1 : 1;
+                if (va > vb) return state.sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const makeSortable = (field, label) => {
+                const active = state.sortBy === field;
+                return `<th class="${active ? 'sort-active' : ''}" onclick="sortBy('${field}')">${label}<span class="sort-arrow">${sortArrow(field)}</span></th>`;
+            };
+
+            container.innerHTML = `<div class="table-wrap glass">
+                <table class="sortable">
+                    <thead><tr>
+                        <th style="width:2.5rem;text-align:center">#</th>
+                        ${makeSortable('name', 'Project')}
+                        ${makeSortable('stars', 'Stars')}
+                        ${makeSortable('growth', 'Growth')}
+                        ${makeSortable('forks', 'Forks')}
+                        ${makeSortable('language', 'Lang')}
+                        ${makeSortable('created', 'Created')}
+                        ${makeSortable('activity', 'Activity')}
+                        ${makeSortable('score', 'Score')}
+                    </tr></thead>
+                    <tbody>${sorted.map((r, i) => {
+                        const ac = r._activity;
+                        const activityClass = ac.includes('Active') ? 'activity-active' : ac.includes('Slow') ? 'activity-slow' : 'activity-archived';
+                        const tracked = state.tracked.has(r.full_name);
+
+                        return `<tr class="scroll-reveal">
+                            <td style="text-align:center;color:#64748b;font-size:0.7rem">${(state.page - 1) * parseInt(document.getElementById('perPage').value) + i + 1}</td>
+                            <td>
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <img src="${r.owner.avatar_url}" alt="" class="w-7 h-7 rounded-lg bg-slate-800 shrink-0" loading="lazy" onerror="this.src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'">
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <a href="${r.html_url}" target="_blank" class="text-sm font-semibold text-blue-400 hover:underline truncate">${r.full_name}</a>
+                                            ${tracked ? '<span class="text-[10px] text-indigo-400 shrink-0">●</span>' : ''}
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-[280px]">${r.description || ''}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><div class="font-semibold text-sm">${formatCount(r.stargazers_count)}</div><div class="text-[10px] text-emerald-400">+${formatCount(r._weeklyGrowth)}/w</div></td>
+                            <td style="min-width:100px"><div class="text-xs font-medium text-slate-300">+${formatInt(r._weeklyGrowth)}</div><div class="text-[10px] text-emerald-500">▲</div>${generateSparklineHTML(r)}</td>
+                            <td><div class="font-medium text-sm">${formatCount(r.forks_count)}</div></td>
+                            <td><div class="flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span><span class="text-xs">${r.language || '—'}</span></div></td>
+                            <td><div class="text-xs text-slate-400">${daysSince(r.created_at)}d</div></td>
+                            <td><span class="text-xs font-medium ${activityClass}">${r._activity}</span></td>
+                            <td style="min-width:70px">
+                                <div class="text-sm font-bold ${r._score >= 80 ? 'text-emerald-400' : r._score >= 50 ? 'text-amber-400' : 'text-slate-400'}">${r._score}/100</div>
+                                <div class="progress-score"><div class="progress-score-fill ${r._score >= 80 ? 'bg-emerald-500' : r._score >= 50 ? 'bg-amber-500' : 'bg-slate-500'}" style="width:${r._score}%"></div></div>
+                            </td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>
+            </div>`;
+            observeScroll();
+        }
+
+        function sortBy(field) {
+            if (state.sortBy === field) state.sortOrder = state.sortOrder === 'asc' ? 'desc' : 'asc';
+            else { state.sortBy = field; state.sortOrder = 'desc'; }
+            render();
+        }
+
+        function toggleTrack(name, el) {
+            if (state.tracked.has(name)) state.tracked.delete(name);
+            else state.tracked.add(name);
+            saveTracked();
+            if (el) {
+                el.textContent = state.tracked.has(name) ? '✓ Tracked' : '+ Track';
+                el.classList.toggle('tracked', state.tracked.has(name));
+            } else {
+                render();
+            }
+        }
+
+        function observeScroll() {
+            const els = document.querySelectorAll('.scroll-reveal');
+            if (!els.length) return;
+            const obs = new IntersectionObserver(entries => {
+                for (const e of entries) {
+                    if (e.isIntersecting) e.target.classList.add('visible');
+                    else e.target.classList.remove('visible');
+                }
+            }, { threshold: 0.04, rootMargin: '0px 0px -20px 0px' });
+            for (const el of els) obs.observe(el);
+        }
+
+        function checkMobile() {
+            if (window.innerWidth < 768 && state.view === 'list') {
+                state.view = 'grid';
+                render();
+                updateToggleButtons();
+            }
+        }
+        window.addEventListener('resize', checkMobile);
+
+        fetchRepos();
+    </script>
+</body>
+</html>

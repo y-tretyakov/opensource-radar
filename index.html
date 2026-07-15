@@ -3,123 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenSource Radar | Pro</title>
+    <title>Neon Observatory | Radar Pro</title>
+    <link rel="icon" type="image/svg+xml" href="/opensource-radar/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        * { box-sizing: border-box; }
-        body { background: #0b0f19; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
-
-        .glass { background: rgba(17,25,40,0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
-        .glass-card { background: rgba(17,25,40,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
-        .glass-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: 0 8px 32px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.05); transform: translateY(-2px); }
-
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-
-        .scroll-reveal { opacity: 0; transform: translateY(24px); transition: all 0.55s cubic-bezier(0.16,1,0.3,1); }
-        .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
-
-        .results-container { transition: opacity 0.3s ease, transform 0.3s ease; }
-        .results-container.switching { opacity: 0; transform: scale(0.96); pointer-events: none; }
-
-        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 500; background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.15); white-space: nowrap; }
-
-        .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 600; }
-        .stat-value { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
-
-        .trend-hot { color: #f97316; }
-        .trend-rising { color: #22d3ee; }
-        .trend-trending { color: #a78bfa; }
-
-        .lang-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; flex-shrink: 0; }
-
-        .activity-active { color: #22c55e; }
-        .activity-slow { color: #eab308; }
-        .activity-archived { color: #ef4444; }
-
-        .sparkline-svg { width: 100%; height: 24px; }
-        .sparkline-svg path { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-
-        .track-btn { cursor: pointer; transition: all 0.2s; }
-        .track-btn.tracked { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #818cf8; }
-
-        .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05); }
-        table.sortable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        table.sortable th { padding: 0.75rem; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; cursor: pointer; user-select: none; background: rgba(17,25,40,0.4); position: sticky; top: 0; z-index: 2; }
-        table.sortable th:hover { color: #94a3b8; }
-        table.sortable th .sort-arrow { margin-left: 4px; opacity: 0.3; }
-        table.sortable th.sort-active .sort-arrow { opacity: 1; color: #818cf8; }
-        table.sortable td { padding: 0.7rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
-        table.sortable tr:hover td { background: rgba(99,102,241,0.03); }
-        table.sortable tr:last-child td { border-bottom: none; }
-
-        .progress-score { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 2px; overflow: hidden; }
-        .progress-score-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
-
-        .view-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; transition: all 0.25s ease; background: transparent; border: none; cursor: pointer; color: #64748b; }
-        .view-btn:hover { color: #94a3b8; background: rgba(255,255,255,0.04); }
-        .view-btn.active { color: #818cf8; background: rgba(99,102,241,0.15); }
-
-        .filter-input { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.75rem; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #e2e8f0; transition: all 0.2s; width: 100%; }
-        .filter-input:focus { border-color: rgba(99,102,241,0.4); box-shadow: 0 0 0 3px rgba(99,102,241,0.08); }
-        .filter-input::placeholder { color: #475569; }
-
-        select.filter-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; padding-right: 2rem; cursor: pointer; }
-
-        .depth-preset { font-size: 0.7rem; font-weight: 500; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.06); background: transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .depth-preset:hover { border-color: rgba(99,102,241,0.25); color: #94a3b8; }
-        .depth-preset.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); color: #818cf8; }
-
-        .filter-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.12); color: #818cf8; white-space: nowrap; cursor: default; }
-        .filter-chip button { display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; border: none; background: rgba(255,255,255,0.06); color: #64748b; cursor: pointer; font-size: 10px; line-height: 1; padding: 0; transition: all 0.15s; }
-        .filter-chip button:hover { background: rgba(239,68,68,0.3); color: #ef4444; }
-
-        .filter-panel { overflow: hidden; transition: max-height 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease; max-height: 0; opacity: 0; }
-        .filter-panel.open { max-height: 500px; opacity: 1; }
-
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 600; border: none; padding: 0.55rem 1.25rem; border-radius: 0.75rem; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .btn-primary:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.3); transform: translateY(-1px); }
-        .btn-primary:active { transform: scale(0.97); }
-
-        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #64748b; font-weight: 500; padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .btn-ghost:hover { border-color: rgba(255,255,255,0.12); color: #94a3b8; }
-
-        .filter-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; font-weight: 600; margin-bottom: 0.35rem; }
-
-        .order-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: transparent; color: #64748b; cursor: pointer; transition: all 0.2s; }
-        .order-btn:hover { border-color: rgba(99,102,241,0.25); color: #94a3b8; }
-
-        .search-icon { color: #475569; pointer-events: none; flex-shrink: 0; }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
-
-        @media (max-width: 767px) {
-            .card-grid { grid-template-columns: 1fr; }
-            .scroll-reveal { transform: translateY(16px); }
-            .filter-panel { max-height: 0; }
-            .filter-panel.open { max-height: 600px; }
-        }
-    </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased">
 
-    <header class="sticky top-0 z-50" style="border-bottom:1px solid rgba(255,255,255,0.04)">
-        <div class="bg-slate-950/70 backdrop-blur-xl">
+    <header class="sticky top-0 z-50" style="border-bottom:1px solid rgba(38,48,67,0.5)">
+        <div class="bg-[#080B12]/80 backdrop-blur-xl">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#radarGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <defs><linearGradient id="radarGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#818cf8"/></linearGradient></defs>
+                        <defs><linearGradient id="radarGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#58a6ff"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs>
                         <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
                         <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
                         <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
                     </svg>
-                    <span class="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent tracking-tight">radar</span>
-                    <span class="text-[0.6rem] uppercase tracking-widest text-slate-600 font-medium px-1.5 py-0.5 rounded-full border border-slate-800/80">Pro</span>
+                    <span class="text-lg font-bold bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent tracking-tight">radar</span>
+                    <span class="text-[0.6rem] uppercase tracking-widest text-blue-400 font-medium px-1.5 py-0.5 rounded-full border border-blue-500/30" style="box-shadow:0 0 8px rgba(31,111,235,0.15)">Pro</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span id="headerResultCount" class="text-xs text-slate-600"></span>
+                    <span class="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-blue-400/70 font-medium"><span class="neon-dot"></span>Live Signal</span>
+                    <span id="headerResultCount" class="text-xs text-slate-500"></span>
                 </div>
             </div>
         </div>
@@ -133,21 +38,22 @@
                     <svg class="search-icon absolute left-3 top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input id="topic" type="text" placeholder="Search by topic or keyword…" value="TUI" class="filter-input w-full pl-10 pr-3 h-10 text-sm">
                 </div>
-                <button onclick="resetAndFetch()" class="btn-primary h-10 px-5 text-sm shrink-0">Search</button>
+                <button id="searchBtn" class="btn-primary h-10 px-5 text-sm shrink-0">Search</button>
             </div>
 
             <div class="mt-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 text-xs text-slate-500 min-w-0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
                     <span id="filterSummary" class="truncate">★ 10–1k · 30d · All</span>
                 </div>
-                <button id="filterToggleBtn" onclick="toggleFilters()" class="text-xs font-medium text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0 md:hidden">
+                <button id="filterToggleBtn" class="text-xs font-medium text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0 md:hidden">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
                     Filters
                 </button>
             </div>
 
             <div id="filterPanel" class="filter-panel md:!max-h-none md:!opacity-100">
-                <div class="mt-4 pt-4 border-t border-white/[0.04] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="mt-4 pt-4 border-t border-[#263043]/50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
                     <div class="sm:col-span-2 lg:col-span-1">
                         <div class="filter-label">Stars</div>
@@ -161,21 +67,21 @@
                     <div class="sm:col-span-2 lg:col-span-1">
                         <div class="filter-label">Created</div>
                         <div class="flex items-center gap-2">
-                            <input id="days" type="range" min="7" max="365" value="30" class="w-full accent-indigo-500 h-1.5" oninput="onDepthInput(this.value)">
+                            <input id="days" type="range" min="7" max="365" value="30" class="w-full h-1.5">
                             <span id="daysVal" class="text-xs font-mono text-slate-300 w-8 text-right shrink-0">30</span>
                         </div>
-                        <div class="flex flex-wrap gap-1.5 mt-1.5">
-                            <button class="depth-preset" data-days="7" onclick="setDepth(7)">7d</button>
-                            <button class="depth-preset" data-days="14" onclick="setDepth(14)">14d</button>
-                            <button class="depth-preset active" data-days="30" onclick="setDepth(30)">30d</button>
-                            <button class="depth-preset" data-days="90" onclick="setDepth(90)">90d</button>
-                            <button class="depth-preset" data-days="365" onclick="setDepth(365)">1y</button>
+                        <div id="depthPresets" class="flex flex-wrap gap-1.5 mt-1.5">
+                            <button class="depth-preset" data-days="7">7d</button>
+                            <button class="depth-preset" data-days="14">14d</button>
+                            <button class="depth-preset active" data-days="30">30d</button>
+                            <button class="depth-preset" data-days="90">90d</button>
+                            <button class="depth-preset" data-days="365">1y</button>
                         </div>
                     </div>
 
                     <div>
                         <div class="filter-label">Language</div>
-                        <select id="language" class="filter-input text-sm" onchange="updateFilterSummary()">
+                        <select id="language" class="filter-input text-sm">
                             <option value="">All</option>
                         </select>
                     </div>
@@ -188,7 +94,7 @@
                                 <option value="updated">Recent</option>
                                 <option value="name">Name</option>
                             </select>
-                            <button id="orderBtn" class="order-btn" onclick="toggleOrder()" title="Toggle order">
+                            <button id="orderBtn" class="order-btn" title="Toggle order">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
                             </button>
                         </div>
@@ -203,7 +109,7 @@
                                 <option value="50">50</option>
                                 <option value="100">100</option>
                             </select>
-                            <button onclick="resetFilters()" class="btn-ghost text-xs px-2.5 py-1.5 shrink-0" title="Reset all filters">↺</button>
+                            <button id="resetFiltersBtn" class="btn-ghost text-xs px-2.5 py-1.5 shrink-0" title="Reset all filters">↺</button>
                         </div>
                     </div>
 
@@ -213,9 +119,10 @@
             </div>
         </section>
 
-        <div id="viewToggleBar" class="hidden md:flex items-center justify-end mb-3 gap-2">
-            <div class="flex items-center gap-1 p-1 rounded-xl glass" style="border-color:rgba(255,255,255,0.04)">
-                <button onclick="switchView('grid')" id="btn-grid" class="view-btn active" title="Cards">
+        <div id="viewToggleBar" class="hidden md:flex items-center justify-between mb-3">
+            <span id="viewResultCount" class="text-xs text-[#8d96a0]"></span>
+            <div class="flex items-center gap-1 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
+                <button id="btn-grid" class="view-btn active" title="Cards">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1"/>
                         <rect x="9" y="1.5" width="5.5" height="5.5" rx="1"/>
@@ -224,7 +131,7 @@
                     </svg>
                 </button>
 
-                <button onclick="switchView('list')" id="btn-list" class="view-btn" title="Table">
+                <button id="btn-list" class="view-btn" title="Table">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="2" y1="3.5" x2="14" y2="3.5"/>
                         <line x1="2" y1="8" x2="14" y2="8"/>
@@ -236,20 +143,20 @@
 
         <div id="results" class="card-grid results-container"></div>
 
-        <div id="pagination" class="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-slate-800/50 hidden">
-            <button onclick="changePage(-1)" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-indigo-500/30 transition-all" style="border-color:rgba(255,255,255,0.06)">← Back</button>
-            <span id="pageInfo" class="self-center text-sm font-mono text-slate-400">1</span>
-            <button onclick="changePage(1)" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-indigo-500/30 transition-all" style="border-color:rgba(255,255,255,0.06)">Next →</button>
+        <div id="pagination" class="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-[#263043]/50 hidden">
+            <button data-delta="-1" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-blue-500/30 transition-all" style="border-color:rgba(38,48,67,0.6)">← Back</button>
+            <span id="pageInfo" class="self-center text-sm font-mono text-slate-500">1</span>
+            <button data-delta="1" class="px-4 py-2 rounded-xl glass text-sm font-medium hover:border-blue-500/30 transition-all" style="border-color:rgba(38,48,67,0.6)">Next →</button>
         </div>
     </main>
 
-    <footer class="mt-auto" style="border-top:1px solid rgba(255,255,255,0.04)">
-        <div class="bg-slate-950/50 backdrop-blur-xl">
+    <footer class="mt-auto" style="border-top:1px solid rgba(38,48,67,0.5)">
+        <div class="bg-[#080B12]/60 backdrop-blur-xl">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
                 <div class="flex items-center gap-3">
-                    <span class="font-semibold text-slate-500">OpenSource Radar</span>
+                    <span class="font-semibold text-slate-500">Neon Observatory</span>
                     <span class="hidden sm:inline">·</span>
-                    <span class="hidden sm:inline">Built with GitHub Search API</span>
+                    <span class="hidden sm:inline">Tracking Open Source signals</span>
                 </div>
                 <div class="flex items-center gap-4">
                     <a href="https://github.com" target="_blank" rel="noopener" class="hover:text-slate-400 transition flex items-center gap-1.5">
@@ -263,444 +170,6 @@
         </div>
     </footer>
 
-    <script>
-        const COLORS = {
-            'JavaScript': '#f7df1e', 'TypeScript': '#3178c6', 'Python': '#3572A5', 'Go': '#00ADD8',
-            'Rust': '#dea584', 'C': '#555555', 'C++': '#f34b7d', 'Java': '#b07219', 'Kotlin': '#A97BFF',
-            'Ruby': '#701516', 'PHP': '#4F5D95', 'Swift': '#F05138', 'Scala': '#c22d40', 'Dart': '#00B4AB',
-            'Elixir': '#4e2a59', 'Clojure': '#db5855', 'Haskell': '#5e5086', 'Lua': '#000080',
-            'Zig': '#ec915c', 'Nim': '#ffc200', 'Shell': '#89e051', 'HTML': '#e34f26', 'CSS': '#563d7c',
-            'Crystal': '#000100', 'OCaml': '#3be133', 'Solidity': '#363636', 'R': '#198CE7',
-        };
-        const DEFAULT_LANG_COLOR = '#64748b';
-
-        let state = { view: 'grid', page: 1, sortBy: 'stars', sortOrder: 'desc', repos: [], tracked: new Set() };
-
-        try {
-            const t = JSON.parse(localStorage.getItem('osr_tracked') || '[]');
-            state.tracked = new Set(t);
-        } catch(e) {}
-
-        function saveTracked() { localStorage.setItem('osr_tracked', JSON.stringify([...state.tracked])); }
-
-        function formatCount(n) {
-            if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-            if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-            return String(n);
-        }
-
-        function formatInt(n) { return Number(n).toLocaleString(); }
-
-        function timeAgo(dateStr) {
-            const d = new Date(dateStr);
-            const sec = (Date.now() - d.getTime()) / 1000;
-            if (sec < 60) return 'moments ago';
-            const min = sec / 60; if (min < 60) return Math.floor(min) + 'm ago';
-            const hr = min / 60; if (hr < 24) return Math.floor(hr) + 'h ago';
-            const days = hr / 24;
-            if (days < 30) return Math.floor(days) + 'd ago';
-            if (days < 365) return Math.floor(days / 30) + 'mo ago';
-            return Math.floor(days / 365) + 'y ago';
-        }
-
-        function daysSince(dateStr) {
-            return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-        }
-
-        function populateLanguages() {
-            const sel = document.getElementById('language');
-            const langs = Object.keys(COLORS).sort();
-            for (const l of langs) {
-                const opt = document.createElement('option');
-                opt.value = l;
-                opt.textContent = l;
-                sel.appendChild(opt);
-            }
-        }
-        populateLanguages();
-
-        function getFilters() {
-            return {
-                topic: document.getElementById('topic').value.trim() || 'TUI',
-                starsFrom: parseInt(document.getElementById('starsFrom').value) || 0,
-                starsTo: parseInt(document.getElementById('starsTo').value) || 1000000,
-                days: parseInt(document.getElementById('days').value) || 30,
-                language: document.getElementById('language').value,
-                sort: document.getElementById('sort').value || 'stars',
-                order: state.sortOrder,
-                perPage: parseInt(document.getElementById('perPage').value) || 25,
-            };
-        }
-
-        function onDepthInput(val) {
-            document.getElementById('daysVal').textContent = val;
-            document.querySelectorAll('.depth-preset').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days) === parseInt(val)));
-            updateFilterSummary();
-        }
-
-        function setDepth(days) {
-            document.getElementById('days').value = days;
-            onDepthInput(days);
-        }
-
-        function toggleOrder() {
-            state.sortOrder = state.sortOrder === 'desc' ? 'asc' : 'desc';
-            document.getElementById('orderBtn').innerHTML = state.sortOrder === 'desc'
-                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>'
-                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/></svg>';
-            updateFilterSummary();
-        }
-
-        function updateFilterSummary() {
-            const f = getFilters();
-            const chips = document.getElementById('filterChips');
-            const summary = document.getElementById('filterSummary');
-
-            const parts = [];
-            parts.push(['Topic', f.topic]);
-            parts.push(['Stars', `${f.starsFrom}–${formatCount(f.starsTo)}`]);
-            parts.push(['Created', `${f.days}d`]);
-            if (f.language) parts.push(['Lang', f.language]);
-
-            summary.textContent = parts.map(([, v]) => v).join(' · ');
-
-            const active = document.getElementById('filterPanel').classList.contains('open') || window.innerWidth >= 768;
-            if (!active) { chips.innerHTML = ''; return; }
-
-            chips.innerHTML = parts.map(([label, value]) =>
-                `<span class="filter-chip"><span>${label}: ${value}</span><button onclick="removeChip('${label}')" aria-label="Remove ${label} filter">✕</button></span>`
-            ).join('');
-        }
-
-        function removeChip(label) {
-            switch (label) {
-                case 'Topic': document.getElementById('topic').value = 'TUI'; break;
-                case 'Stars': document.getElementById('starsFrom').value = 10; document.getElementById('starsTo').value = 1000; break;
-                case 'Created': setDepth(30); break;
-                case 'Lang': document.getElementById('language').value = ''; break;
-            }
-            updateFilterSummary();
-            resetAndFetch();
-        }
-
-        function resetFilters() {
-            document.getElementById('topic').value = 'TUI';
-            document.getElementById('starsFrom').value = 10;
-            document.getElementById('starsTo').value = 1000;
-            setDepth(30);
-            document.getElementById('language').value = '';
-            document.getElementById('sort').value = 'stars';
-            state.sortOrder = 'desc';
-            document.getElementById('orderBtn').innerHTML =
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-            document.getElementById('perPage').value = 25;
-            updateFilterSummary();
-            resetAndFetch();
-        }
-
-        let filterPanelOpen = false;
-        function toggleFilters() {
-            filterPanelOpen = !filterPanelOpen;
-            document.getElementById('filterPanel').classList.toggle('open', filterPanelOpen);
-            document.getElementById('filterToggleBtn').classList.toggle('text-indigo-400', filterPanelOpen);
-            if (filterPanelOpen) updateFilterSummary();
-            else document.getElementById('filterChips').innerHTML = '';
-        }
-
-        function enrichRepo(r) {
-            const ageDays = daysSince(r.created_at) || 1;
-            const growthPerDay = r.stargazers_count / ageDays;
-            const weeklyGrowth = Math.round(growthPerDay * 7);
-
-            let trend = '';
-            const gpd = growthPerDay;
-            if (gpd > 50) trend = '🔥 Hot';
-            else if (gpd > 20) trend = '🚀 Rising Star';
-            else if (gpd > 5) trend = '↗ Trending';
-
-            let activity = '🟢 Active';
-            const daysSinceUpdate = daysSince(r.pushed_at);
-            if (daysSinceUpdate > 365) activity = '🔴 Archived';
-            else if (daysSinceUpdate > 90) activity = '🟡 Slow';
-
-            const starScore = Math.min(40, Math.round(Math.log10(r.stargazers_count + 1) * 12));
-            const growthScore = Math.min(25, Math.round(growthPerDay * 2));
-            const activityScore = Math.min(20, Math.max(0, 20 - Math.floor(daysSinceUpdate / 18)));
-            const forkScore = Math.min(10, Math.round(Math.log10(r.forks_count + 1) * 4));
-            const descScore = (r.description && r.description.length > 10) ? 5 : 0;
-            const score = Math.min(100, starScore + growthScore + activityScore + forkScore + descScore);
-
-            return { ...r, _ageDays: ageDays, _growthPerDay: gpd, _weeklyGrowth: weeklyGrowth, _trend: trend, _activity: activity, _score: score, _trendLabel: trend.split(' ').slice(1).join(' ') || trend, _trendIcon: trend.split(' ')[0] || '' };
-        }
-
-        function langColor(lang) { return COLORS[lang] || DEFAULT_LANG_COLOR; }
-
-        function updateToggleButtons() {
-            const g = document.getElementById('btn-grid');
-            const l = document.getElementById('btn-list');
-            if (g) g.className = 'view-btn' + (state.view === 'grid' ? ' active' : '');
-            if (l) l.className = 'view-btn' + (state.view === 'list' ? ' active' : '');
-        }
-
-        function switchView(view) {
-            if (window.innerWidth < 768 && view === 'list') return;
-            if (state.view === view) return;
-            const container = document.getElementById('results');
-            container.classList.add('switching');
-            updateToggleButtons();
-            setTimeout(() => {
-                state.view = view;
-                container.classList.remove('switching');
-                render();
-            }, 180);
-        }
-
-        function resetAndFetch() { state.page = 1; fetchRepos(); }
-
-        function changePage(delta) {
-            state.page = Math.max(1, state.page + delta);
-            fetchRepos();
-        }
-
-        async function fetchRepos() {
-            const f = getFilters();
-            const container = document.getElementById('results');
-
-            const date = new Date();
-            date.setDate(date.getDate() - f.days);
-
-            let q = `topic:${f.topic}+created:>=${date.toISOString().split('T')[0]}+stars:${f.starsFrom}..${f.starsTo}`;
-            if (f.language) q += `+language:${f.language}`;
-
-            const url = `https://api.github.com/search/repositories?q=${q}&sort=${f.sort}&order=${f.order}&per_page=${f.perPage}&page=${state.page}`;
-
-            container.innerHTML = '<div class="col-span-full text-center py-24"><div class="inline-block w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div><p class="mt-3 text-sm text-slate-500">Loading...</p></div>';
-
-            document.getElementById('viewToggleBar')?.classList.add('hidden');
-            document.getElementById('headerResultCount').textContent = '';
-
-            try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('API Error ' + res.status);
-                const data = await res.json();
-
-                const repos = (data.items || []).map(enrichRepo);
-                state.repos = repos;
-                document.getElementById('headerResultCount').textContent = repos.length ? `${data.total_count.toLocaleString()} projects` : '';
-
-                document.getElementById('pagination').classList.toggle('hidden', !repos.length);
-                document.getElementById('pageInfo').innerText = `Page ${state.page}`;
-
-                if (repos.length) document.getElementById('viewToggleBar')?.classList.remove('hidden');
-
-                render();
-            } catch (err) {
-                container.innerHTML = '<div class="col-span-full text-center py-24 text-sm text-red-400">API error — rate limited?<br><span class="text-slate-500 text-xs mt-2 block">Try again in a minute</span></div>';
-            }
-        }
-
-        function render() {
-            const container = document.getElementById('results');
-            if (!state.repos.length) {
-                container.innerHTML = '<div class="col-span-full text-center py-24 text-sm text-slate-500">Nothing found</div>';
-                return;
-            }
-            if (state.view === 'grid') renderCards(container);
-            else renderList(container);
-        }
-
-        function renderCards(container) {
-            container.className = 'card-grid results-container';
-            container.innerHTML = state.repos.map(r => {
-                const tracked = state.tracked.has(r.full_name);
-                const tags = (r.topics || []).slice(0, 5);
-
-                return `<div class="scroll-reveal glass-card rounded-2xl flex flex-col overflow-hidden shadow-lg">
-                    <div class="p-4 flex items-start gap-3 border-b border-white/[0.03]">
-                        <img src="${r.owner.avatar_url}" alt="" class="w-10 h-10 rounded-xl bg-slate-800 shrink-0" loading="lazy" onerror="this.src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'">
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-start justify-between gap-2">
-                                <a href="${r.html_url}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate block">${r.full_name}</a>
-                                <span class="track-btn text-xs px-2 py-0.5 rounded-full border ${tracked ? 'tracked' : 'border-slate-700 text-slate-500 hover:border-slate-500'}" onclick="toggleTrack('${r.full_name}',this)">${tracked ? '✓ Tracked' : '+ Track'}</span>
-                            </div>
-                            <p class="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">${r.description || 'No description'}</p>
-                        </div>
-                    </div>
-
-                    ${r._trend ? `<div class="px-4 pt-3 flex items-center gap-1.5 text-xs font-medium"><span class="${r._trendIcon === '🔥' ? 'trend-hot' : r._trendIcon === '🚀' ? 'trend-rising' : 'trend-trending'}">${r._trendIcon}</span><span class="text-slate-400">${r._trendLabel || r._trend}</span></div>` : ''}
-
-                    <div class="px-4 pt-3 grid grid-cols-4 gap-2">
-                        <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
-                        <div><div class="stat-label">Growth</div><div class="stat-value text-emerald-400">+${formatCount(r._weeklyGrowth)}</div></div>
-                        <div><div class="stat-label">Forks</div><div class="stat-value">${formatCount(r.forks_count)}</div></div>
-                        <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${r.language || '—'}</div></div>
-                    </div>
-
-                    <div class="px-4 pt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
-                        <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
-                        <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
-                        <div><span class="text-slate-600">License</span> <span class="text-slate-300">${r.license?.spdx_id || '—'}</span></div>
-                        <div><span class="text-slate-600">Size</span> <span class="text-slate-300">${(r.size / 1024).toFixed(1)} MB</span></div>
-                    </div>
-
-                    ${tags.length ? `<div class="px-4 pt-3 flex flex-wrap gap-1">${tags.map(t => `<span class="badge">${t}</span>`).join('')}</div>` : ''}
-
-                    <div class="mt-auto p-4 flex items-center gap-2 border-t border-white/[0.03]">
-                        <a href="${r.html_url}" target="_blank" class="flex-1 text-center text-xs font-medium py-2 rounded-xl bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600/20 border border-indigo-600/20 transition-all">Open GitHub</a>
-                        <button onclick="toggleTrack('${r.full_name}')" class="flex-1 text-center text-xs font-medium py-2 rounded-xl glass border-slate-700/50 hover:border-indigo-500/30 transition-all ${tracked ? 'text-indigo-400' : 'text-slate-400'}">${tracked ? 'Tracked' : 'Track Project'}</button>
-                    </div>
-                </div>`;
-            }).join('');
-            observeScroll();
-        }
-
-        function renderList(container) {
-            container.className = 'results-container';
-            const sortArrow = (field) => state.sortBy === field ? (state.sortOrder === 'desc' ? '▼' : '▲') : '';
-
-            const sorted = [...state.repos].sort((a, b) => {
-                let va, vb;
-                switch (state.sortBy) {
-                    case 'stars': va = a.stargazers_count; vb = b.stargazers_count; break;
-                    case 'growth': va = a._growthPerDay; vb = b._growthPerDay; break;
-                    case 'forks': va = a.forks_count; vb = b.forks_count; break;
-                    case 'created': va = new Date(a.created_at); vb = new Date(b.created_at); break;
-                    case 'score': va = a._score; vb = b._score; break;
-                    case 'name': va = a.full_name.toLowerCase(); vb = b.full_name.toLowerCase(); break;
-                    case 'activity': va = daysSince(a.pushed_at); vb = daysSince(b.pushed_at); break;
-                    case 'language': va = a.language || ''; vb = b.language || ''; break;
-                    default: va = a.stargazers_count; vb = b.stargazers_count;
-                }
-                if (va < vb) return state.sortOrder === 'asc' ? -1 : 1;
-                if (va > vb) return state.sortOrder === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            const makeSortable = (field, label) => {
-                const active = state.sortBy === field;
-                return `<th class="${active ? 'sort-active' : ''}" onclick="sortBy('${field}')">${label}<span class="sort-arrow">${sortArrow(field)}</span></th>`;
-            };
-
-            container.innerHTML = `<div class="table-wrap glass">
-                <table class="sortable">
-                    <thead><tr>
-                        <th style="width:2.5rem;text-align:center">#</th>
-                        ${makeSortable('name', 'Project')}
-                        ${makeSortable('stars', 'Stars')}
-                        ${makeSortable('growth', 'Growth')}
-                        ${makeSortable('forks', 'Forks')}
-                        ${makeSortable('language', 'Lang')}
-                        ${makeSortable('created', 'Created')}
-                        ${makeSortable('activity', 'Activity')}
-                        ${makeSortable('score', 'Score')}
-                    </tr></thead>
-                    <tbody>${sorted.map((r, i) => {
-                        const ac = r._activity;
-                        const activityClass = ac.includes('Active') ? 'activity-active' : ac.includes('Slow') ? 'activity-slow' : 'activity-archived';
-                        const tracked = state.tracked.has(r.full_name);
-
-                        return `<tr class="scroll-reveal">
-                            <td style="text-align:center;color:#64748b;font-size:0.7rem">${(state.page - 1) * parseInt(document.getElementById('perPage').value) + i + 1}</td>
-                            <td>
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <img src="${r.owner.avatar_url}" alt="" class="w-7 h-7 rounded-lg bg-slate-800 shrink-0" loading="lazy" onerror="this.src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'">
-                                    <div class="min-w-0">
-                                        <div class="flex items-center gap-1.5">
-                                            <a href="${r.html_url}" target="_blank" class="text-sm font-semibold text-blue-400 hover:underline truncate">${r.full_name}</a>
-                                            ${tracked ? '<span class="text-[10px] text-indigo-400 shrink-0">●</span>' : ''}
-                                        </div>
-                                        <div class="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-[280px]">${r.description || ''}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><div class="font-semibold text-sm">${formatCount(r.stargazers_count)}</div><div class="text-[10px] text-emerald-400">+${formatCount(r._weeklyGrowth)}/w</div></td>
-                            <td style="min-width:100px"><div class="text-xs font-medium text-slate-300">+${formatInt(r._weeklyGrowth)}</div><div class="text-[10px] text-emerald-500">▲</div></td>
-                            <td><div class="font-medium text-sm">${formatCount(r.forks_count)}</div></td>
-                            <td><div class="flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span><span class="text-xs">${r.language || '—'}</span></div></td>
-                            <td><div class="text-xs text-slate-400">${daysSince(r.created_at)}d</div></td>
-                            <td><span class="text-xs font-medium ${activityClass}">${r._activity}</span></td>
-                            <td style="min-width:70px">
-                                <div class="text-sm font-bold ${r._score >= 80 ? 'text-emerald-400' : r._score >= 50 ? 'text-amber-400' : 'text-slate-400'}">${r._score}/100</div>
-                                <div class="progress-score"><div class="progress-score-fill ${r._score >= 80 ? 'bg-emerald-500' : r._score >= 50 ? 'bg-amber-500' : 'bg-slate-500'}" style="width:${r._score}%"></div></div>
-                            </td>
-                        </tr>`;
-                    }).join('')}</tbody>
-                </table>
-            </div>`;
-            observeScroll();
-
-            function generateSparklineHTML(repo) {
-                const count = 20;
-                const pts = [];
-                for (let i = 0; i < count; i++) {
-                    const t = (i + 1) / count;
-                    const raw = repo.stargazers_count / (1 + Math.exp(-10 * (t - 0.5)));
-                    pts.push(raw);
-                }
-                const max = Math.max(...pts, 1);
-                const w = 120, h = 24, pad = 2;
-                const xStep = (w - pad * 2) / (count - 1);
-                const d = pts.map((v, i) => {
-                    const x = pad + i * xStep;
-                    const y = h - pad - (v / max) * (h - pad * 2);
-                    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-                }).join(' ');
-                const hue = repo._growthPerDay > 20 ? '142' : repo._growthPerDay > 5 ? '99' : '217';
-                return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}"><path d="${d}" stroke="hsla(${hue},70%,55%,0.8)" fill="none" stroke-width="1.5"/><path d="${d}" stroke="hsla(${hue},70%,55%,0.15)" fill="none" stroke-width="6" transform="translate(0,2)"/></svg>`;
-            }
-
-            const sparklineTds = container.querySelectorAll('td:nth-child(4)');
-            if (state.repos.length <= 25) {
-                sorted.forEach((r, i) => {
-                    const td = sparklineTds[i];
-                    if (td) td.insertAdjacentHTML('beforeend', generateSparklineHTML(r));
-                });
-            }
-        }
-
-        function sortBy(field) {
-            if (state.sortBy === field) state.sortOrder = state.sortOrder === 'asc' ? 'desc' : 'asc';
-            else { state.sortBy = field; state.sortOrder = 'desc'; }
-            render();
-        }
-
-        function toggleTrack(name, el) {
-            if (state.tracked.has(name)) state.tracked.delete(name);
-            else state.tracked.add(name);
-            saveTracked();
-            if (el) {
-                el.textContent = state.tracked.has(name) ? '✓ Tracked' : '+ Track';
-                el.classList.toggle('tracked', state.tracked.has(name));
-            } else {
-                render();
-            }
-        }
-
-        function observeScroll() {
-            const els = document.querySelectorAll('.scroll-reveal');
-            if (!els.length) return;
-            const obs = new IntersectionObserver(entries => {
-                for (const e of entries) {
-                    if (e.isIntersecting) e.target.classList.add('visible');
-                    else e.target.classList.remove('visible');
-                }
-            }, { threshold: 0.04, rootMargin: '0px 0px -20px 0px' });
-            for (const el of els) obs.observe(el);
-        }
-
-        function checkMobile() {
-            if (window.innerWidth < 768 && state.view === 'list') {
-                state.view = 'grid';
-                if (state.repos.length) render();
-                updateToggleButtons();
-            }
-        }
-        window.addEventListener('resize', checkMobile);
-
-        document.getElementById('topic').addEventListener('keydown', e => { if (e.key === 'Enter') resetAndFetch(); });
-
-        updateFilterSummary();
-        fetchRepos();
-    </script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

@@ -17,6 +17,17 @@ export function enrichRepo(repo: {
   owner: { login: string; avatar_url: string; html_url: string }
   license: { spdx_id: string } | null
   size: number
+  subscribers_count: number
+  open_issues_count: number
+  has_issues: boolean
+  has_wiki: boolean
+  has_pages: boolean
+  has_discussions: boolean
+  archived: boolean
+  disabled: boolean
+  fork: boolean
+  default_branch: string
+  homepage: string | null
 }) {
   const ageDays = daysSince(repo.created_at) || 1
   const growthPerDay = repo.stargazers_count / ageDays

@@ -18,6 +18,17 @@ export interface EnrichedRepository {
   };
   license: { spdx_id: string } | null;
   size: number;
+  subscribers_count: number;
+  open_issues_count: number;
+  has_issues: boolean;
+  has_wiki: boolean;
+  has_pages: boolean;
+  has_discussions: boolean;
+  archived: boolean;
+  disabled: boolean;
+  fork: boolean;
+  default_branch: string;
+  homepage: string | null;
   _ageDays: number;
   _growthPerDay: number;
   _weeklyGrowth: number;

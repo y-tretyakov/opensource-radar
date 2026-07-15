@@ -14,14 +14,28 @@ export interface GitHubRepo {
   description: string | null;
   html_url: string;
   stargazers_count: number;
+  watchers_count: number;
   forks_count: number;
+  open_issues_count: number;
   language: string | null;
   created_at: string;
   pushed_at: string;
+  updated_at: string;
   topics: string[];
   owner: GitHubOwner;
   license: GitHubLicense | null;
   size: number;
+  has_issues: boolean;
+  has_projects: boolean;
+  has_wiki: boolean;
+  has_pages: boolean;
+  has_discussions: boolean;
+  archived: boolean;
+  disabled: boolean;
+  fork: boolean;
+  default_branch: string;
+  subscribers_count: number;
+  homepage: string | null;
 }
 
 export interface GitHubSearchResponse {

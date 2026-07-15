@@ -6,6 +6,7 @@ import { saveTracked } from '../utils/storage'
 import { renderBadges } from '../features/scoring/badge-display'
 import { renderWhyInteresting } from '../features/scoring/reasons'
 import { renderRadarMap } from '../features/radar-map/map'
+import { insightEngine, repoToInsightData } from '../features/insights'
 
 function observeScroll(): void {
   const els = document.querySelectorAll('.scroll-reveal')
@@ -72,6 +73,11 @@ function renderCards(repos: EnrichedRepository[]): void {
       </div>
 
       ${r._badges.length ? `<div class="px-4 pt-2.5 flex justify-center">${renderBadges(r._badges)}</div>` : ''}
+
+      <div class="px-4 pt-2 text-[11px] text-slate-500 italic leading-relaxed insight-summary">${(() => {
+        const data = repoToInsightData(r)
+        return insightEngine.analyze(data).summary
+      })()}</div>
 
       <div class="px-4 pt-3 grid grid-cols-4 gap-2">
         <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>

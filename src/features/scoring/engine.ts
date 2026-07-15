@@ -74,12 +74,18 @@ export function calcMomentum(pushedAt: string, createdAt: string): { value: numb
   return { value, reasons }
 }
 
-export function calcCommunity(stars: number, forks: number): { value: number; reasons: string[] } {
+export function calcCommunity(
+  stars: number,
+  forks: number,
+  subscribers: number,
+  hasDiscussions: boolean,
+  openIssues: number,
+): { value: number; reasons: string[] } {
   const reasons: string[] = []
 
-  const contributorProxy = logScale(forks, 50000, 50)
+  const contributorProxy = logScale(forks, 50000, 35)
   const forkGrowth = forks / Math.max(stars, 1)
-  const forkScore = rateToScore(forkGrowth * 100, 50, 30)
+  const forkScore = rateToScore(forkGrowth * 100, 50, 20)
 
   if (forks > 1000) {
     reasons.push(`${(forks / 1000).toFixed(1)}k forks — strong community engagement`)
@@ -87,9 +93,28 @@ export function calcCommunity(stars: number, forks: number): { value: number; re
     reasons.push(`${forks} forks — growing community interest`)
   }
 
-  const value = clamp(Math.round(contributorProxy + forkScore), 0, 100)
+  let subscriberScore = 0
+  if (subscribers > 0) {
+    subscriberScore = logScale(subscribers, 50000, 20)
+    if (subscribers > 100) {
+      reasons.push(`${subscribers} watchers — active follower base`)
+    }
+  }
+
+  let discussionScore = 0
+  if (hasDiscussions) {
+    discussionScore = 10
+    reasons.push('Has discussions — community interaction enabled')
+  }
+
+  let issueScore = 0
+  if (openIssues > 0) {
+    issueScore = Math.min(15, Math.round(Math.log10(openIssues + 1) * 5))
+  }
+
+  const value = clamp(Math.round(contributorProxy + forkScore + subscriberScore + discussionScore + issueScore), 0, 100)
   if (value < 10 && reasons.length === 0) {
-    reasons.push('Limited community data (requires additional API calls)')
+    reasons.push('Limited community data')
   }
 
   return { value, reasons }
@@ -100,36 +125,79 @@ export function calcQuality(
   license: { spdx_id: string } | null,
   topics: string[],
   size: number,
+  hasIssues: boolean,
+  hasWiki: boolean,
+  hasPages: boolean,
+  hasDiscussions: boolean,
+  archived: boolean,
+  disabled: boolean,
+  isFork: boolean,
+  defaultBranch: string,
+  homepage: string | null,
 ): { value: number; reasons: string[] } {
   const reasons: string[] = []
+
+  if (archived || disabled) {
+    return { value: 5, reasons: ['Repository is archived or disabled'] }
+  }
+
   let score = 0
 
   if (description && description.length > 20) {
-    score += 25
+    score += 15
     reasons.push('Well-written description')
   } else if (description && description.length > 5) {
-    score += 15
+    score += 10
   }
 
   if (license && license.spdx_id && license.spdx_id !== 'NOASSERTION') {
-    score += 20
+    score += 15
     reasons.push(`${license.spdx_id} license`)
   } else {
-    score += 5
+    score += 3
   }
 
   const qualityTopicCount = topics.filter(t => QUALITY_TOPICS.has(t.toLowerCase())).length
-  score += clamp(qualityTopicCount * 10, 0, 30)
+  score += clamp(qualityTopicCount * 8, 0, 20)
   if (qualityTopicCount > 0) {
-    reasons.push('Has documentation/testing signals in topics')
+    reasons.push('Documentation/testing signals in topics')
   }
 
-  const sizeScore = size > 100 ? 15 : size > 10 ? 10 : 5
+  if (hasIssues) {
+    score += 8
+    reasons.push('Issue tracking enabled')
+  }
+
+  if (hasWiki) {
+    score += 8
+  }
+
+  if (hasPages) {
+    score += 8
+    reasons.push('GitHub Pages site — dedicated documentation')
+  }
+
+  if (hasDiscussions) {
+    score += 5
+  }
+
+  if (homepage) {
+    score += 6
+    reasons.push('Has project website')
+  }
+
+  if (defaultBranch === 'main') {
+    score += 5
+  }
+
+  if (isFork) score = Math.max(0, score - 10)
+
+  const sizeScore = size > 100 ? 10 : size > 10 ? 5 : 2
   score += sizeScore
 
   const value = clamp(score, 0, 100)
   if (value < 30) {
-    reasons.push('Limited quality signals (README/content not fully analyzed)')
+    reasons.push('Limited quality signals')
   } else if (reasons.length === 0) {
     reasons.push('Repository has basic quality indicators')
   }
@@ -176,13 +244,24 @@ export function calculateRadarScore(params: {
   license: { spdx_id: string } | null
   size: number
   language: string | null
+  subscribers_count: number
+  open_issues_count: number
+  has_issues: boolean
+  has_wiki: boolean
+  has_pages: boolean
+  has_discussions: boolean
+  archived: boolean
+  disabled: boolean
+  fork: boolean
+  default_branch: string
+  homepage: string | null
 }): ScoreBreakdown {
   const ageDays = daysSince(params.created_at) || 1
 
   const growth = calcGrowth(params.stargazers_count, ageDays, params.forks_count)
   const momentum = calcMomentum(params.pushed_at, params.created_at)
-  const community = calcCommunity(params.stargazers_count, params.forks_count)
-  const quality = calcQuality(params.description, params.license, params.topics, params.size)
+  const community = calcCommunity(params.stargazers_count, params.forks_count, params.subscribers_count, params.has_discussions, params.open_issues_count)
+  const quality = calcQuality(params.description, params.license, params.topics, params.size, params.has_issues, params.has_wiki, params.has_pages, params.has_discussions, params.archived, params.disabled, params.fork, params.default_branch, params.homepage)
   const trend = calcTrend(params.topics, params.language)
 
   const total = clamp(Math.round(

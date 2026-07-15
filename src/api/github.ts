@@ -6,8 +6,10 @@ import { store } from '../state/store'
 import { getFilters } from '../components/filters'
 import { getMode } from '../features/discovery/modes'
 import { updateSnapshots } from '../features/tracking/dashboard'
+import { cacheGet, cacheSet } from '../utils/cache'
 
 const API_BASE = 'https://api.github.com/search/repositories'
+const CACHE_TTL = 4 * 60 * 1000
 
 function buildQuery(f: FilterState, mode: DiscoveryMode): string {
   if (mode !== 'search') {
@@ -34,14 +36,21 @@ export async function searchRepositories(
 ): Promise<{ repos: EnrichedRepository[]; totalCount: number }> {
   const q = buildQuery(f, mode)
   const url = `${API_BASE}?q=${q}&sort=${f.sort}&order=${f.order}&per_page=${f.perPage}&page=${page}`
+  const cacheKey = `gh:${url}`
+
+  const cached = cacheGet<{ repos: EnrichedRepository[]; totalCount: number }>(cacheKey)
+  if (cached) return cached
 
   const res = await fetch(url)
   if (!res.ok) throw new Error('API Error ' + res.status)
 
   const data: GitHubSearchResponse = await res.json()
   const repos = (data.items || []).map(enrichRepo)
+  const result = { repos, totalCount: data.total_count }
 
-  return { repos, totalCount: data.total_count }
+  cacheSet(cacheKey, result, CACHE_TTL)
+
+  return result
 }
 
 export async function fetchRepos(): Promise<void> {

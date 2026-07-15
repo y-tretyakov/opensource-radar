@@ -9,6 +9,51 @@ interface Point {
   color: string
 }
 
+function getCanvasSize(container: HTMLElement): { w: number; h: number } {
+  const rect = container.getBoundingClientRect()
+  const w = Math.max(rect.width - 4, 320)
+  const isMobile = w < 600
+  const h = isMobile
+    ? Math.max(400, Math.min(500, window.innerHeight * 0.6))
+    : Math.max(600, Math.min(800, window.innerHeight * 0.75))
+  return { w, h }
+}
+
+function getPointerPos(canvas: HTMLCanvasElement, clientX: number, clientY: number): { mx: number; my: number } {
+  const br = canvas.getBoundingClientRect()
+  return { mx: clientX - br.left, my: clientY - br.top }
+}
+
+function findPoint(points: Point[], mx: number, my: number): Point | null {
+  for (const p of points) {
+    const dx = mx - p.x
+    const dy = my - p.y
+    if (dx * dx + dy * dy < (p.r + 6) * (p.r + 6)) {
+      return p
+    }
+  }
+  return null
+}
+
+function updateTooltip(tooltip: HTMLElement, hovered: Point, mx: number, my: number, w: number, h: number): void {
+  const r = hovered.repo
+  tooltip.innerHTML = `
+    <div class="radar-tooltip-name">${r.full_name}</div>
+    <div class="radar-tooltip-stat">⭐ ${r.stargazers_count.toLocaleString()} stars</div>
+    <div class="radar-tooltip-stat">📈 +${r._weeklyGrowth}/week</div>
+    <div class="radar-tooltip-stat">🏷 ${r.language || '—'} · ${r._classification}</div>
+    <div class="radar-tooltip-score">Score: ${r._score}/100</div>`
+  tooltip.classList.remove('hidden')
+
+  let tx = mx + 14
+  let ty = my - 10
+  if (tx + 180 > w) tx = mx - 186
+  if (ty < 4) ty = 4
+  if (ty + 80 > h) ty = h - 84
+  tooltip.style.left = `${tx}px`
+  tooltip.style.top = `${ty}px`
+}
+
 export function renderRadarMap(repos: EnrichedRepository[], container: HTMLElement): void {
   container.className = 'results-container'
   container.innerHTML = `<div class="radar-map-wrap"><canvas id="radarCanvas" class="radar-canvas"></canvas><div id="radarTooltip" class="radar-tooltip hidden"></div></div>`
@@ -17,9 +62,7 @@ export function renderRadarMap(repos: EnrichedRepository[], container: HTMLEleme
   const tooltip = document.getElementById('radarTooltip') as HTMLElement
   if (!canvas) return
 
-  const rect = container.getBoundingClientRect()
-  const w = Math.max(rect.width - 4, 600)
-  const h = Math.max(600, Math.min(800, window.innerHeight * 0.75))
+  let { w, h } = getCanvasSize(container)
 
   const dpr = window.devicePixelRatio || 1
   canvas.width = w * dpr
@@ -29,7 +72,9 @@ export function renderRadarMap(repos: EnrichedRepository[], container: HTMLEleme
   const ctx = canvas.getContext('2d')!
   ctx.scale(dpr, dpr)
 
-  const pad = { top: 40, right: 40, bottom: 50, left: 60 }
+  const pad = w < 600
+    ? { top: 30, right: 20, bottom: 40, left: 45 }
+    : { top: 40, right: 40, bottom: 50, left: 60 }
   const plotW = w - pad.left - pad.right
   const plotH = h - pad.top - pad.bottom
 
@@ -51,66 +96,85 @@ export function renderRadarMap(repos: EnrichedRepository[], container: HTMLEleme
     }
   })
 
-  drawAxes(ctx, w, h, pad, plotW, plotH, maxStars, maxGrowth)
-  drawPoints(ctx, points)
-
   let hovered: Point | null = null
 
-  canvas.addEventListener('mousemove', (e) => {
-    const br = canvas.getBoundingClientRect()
-    const mx = e.clientX - br.left
-    const my = e.clientY - br.top
+  function redraw(): void {
+    drawAxes(ctx, w, h, pad, plotW, plotH, maxStars, maxGrowth)
+    drawPoints(ctx, points)
+    if (hovered) drawHighlight(ctx, hovered)
+  }
 
-    hovered = null
-    for (const p of points) {
-      const dx = mx - p.x
-      const dy = my - p.y
-      if (dx * dx + dy * dy < (p.r + 6) * (p.r + 6)) {
-        hovered = p
-        break
-      }
-    }
+  redraw()
+
+  function handlePointerMove(mx: number, my: number): void {
+    hovered = findPoint(points, mx, my)
 
     if (hovered) {
-      const r = hovered.repo
-      tooltip.innerHTML = `
-        <div class="radar-tooltip-name">${r.full_name}</div>
-        <div class="radar-tooltip-stat">⭐ ${r.stargazers_count.toLocaleString()} stars</div>
-        <div class="radar-tooltip-stat">📈 +${r._weeklyGrowth}/week</div>
-        <div class="radar-tooltip-stat">🏷 ${r.language || '—'} · ${r._classification}</div>
-        <div class="radar-tooltip-score">Score: ${r._score}/100</div>`
-      tooltip.classList.remove('hidden')
-
-      let tx = mx + 14
-      let ty = my - 10
-      if (tx + 180 > w) tx = mx - 186
-      if (ty < 4) ty = 4
-      if (ty + 80 > h) ty = h - 84
-      tooltip.style.left = `${tx}px`
-      tooltip.style.top = `${ty}px`
+      updateTooltip(tooltip, hovered, mx, my, w, h)
       canvas.style.cursor = 'pointer'
     } else {
       tooltip.classList.add('hidden')
       canvas.style.cursor = 'default'
     }
 
-    drawAxes(ctx, w, h, pad, plotW, plotH, maxStars, maxGrowth)
-    drawPoints(ctx, points)
-    if (hovered) drawHighlight(ctx, hovered)
-  })
+    redraw()
+  }
 
-  canvas.addEventListener('click', () => {
+  function handlePointerLeave(): void {
+    tooltip.classList.add('hidden')
+    hovered = null
+    redraw()
+  }
+
+  function handlePointerClick(): void {
     if (hovered) {
       window.open(hovered.repo.html_url, '_blank')
     }
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const { mx, my } = getPointerPos(canvas, e.clientX, e.clientY)
+    handlePointerMove(mx, my)
   })
 
-  canvas.addEventListener('mouseleave', () => {
-    tooltip.classList.add('hidden')
-    hovered = null
-    drawAxes(ctx, w, h, pad, plotW, plotH, maxStars, maxGrowth)
-    drawPoints(ctx, points)
+  canvas.addEventListener('click', handlePointerClick)
+  canvas.addEventListener('mouseleave', handlePointerLeave)
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const { mx, my } = getPointerPos(canvas, touch.clientX, touch.clientY)
+    handlePointerMove(mx, my)
+  }, { passive: false })
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const { mx, my } = getPointerPos(canvas, touch.clientX, touch.clientY)
+    handlePointerMove(mx, my)
+  }, { passive: false })
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault()
+    if (hovered) {
+      window.open(hovered.repo.html_url, '_blank')
+    }
+    handlePointerLeave()
+  }, { passive: false })
+
+  const resizeObserver = new ResizeObserver(() => {
+    const { w: nw, h: nh } = getCanvasSize(container)
+    if (nw === w && nh === h) return
+    w = nw
+    h = nh
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    canvas.style.width = `${w}px`
+    canvas.style.height = `${h}px`
+    ctx.scale(dpr, dpr)
+    redraw()
   })
+  resizeObserver.observe(container)
 }
 
 function drawAxes(

@@ -39,17 +39,17 @@ export function renderWhyInteresting(repo: EnrichedRepository): string {
   const preview = `
     <div class="insight-toggle cursor-pointer select-none flex items-center justify-between" data-action="insight-toggle" data-repo="${escapeHtml(repo.full_name)}">
       <div class="flex items-center gap-1.5 text-[10px]">
-        <span class="text-blue-500/50 uppercase tracking-wider font-medium">Why interesting</span>
+        <span class="text-yellow-400/70 uppercase tracking-wider font-medium">✨ Why interesting</span>
         <span class="text-slate-600">·</span>
         <span class="text-slate-500">${insight.confidence}%</span>
         <span class="text-slate-600">·</span>
         <span class="text-slate-500">${signalCount + warningCount} sig</span>
       </div>
-      <span class="insight-chevron text-slate-500 transition-transform duration-200 shrink-0 text-[10px]">▸</span>
+      <span class="insight-chevron text-slate-500 shrink-0 text-[10px]">▸</span>
     </div>`
 
   const panel = `
-    <div class="insight-panel hidden mt-2 pt-2 border-t border-[#263043]/50">
+    <div class="insight-panel mt-2 pt-2 border-t border-[#263043]/50">
       <div class="text-[10px] uppercase tracking-wider text-slate-600 font-medium mb-1">Summary</div>
       <div class="text-xs text-slate-400 leading-relaxed mb-2.5">${escapeHtml(insight.summary)}</div>
       ${signalsHtml.length ? `

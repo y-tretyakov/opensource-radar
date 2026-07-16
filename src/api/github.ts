@@ -1,7 +1,7 @@
 import type { GitHubSearchResponse, FilterState, DiscoveryMode } from './types'
 import type { EnrichedRepository } from '../models/repository'
 import { enrichRepo } from '../core/radar-score'
-import { render } from '../core/render'
+import { render, renderSkeletons } from '../core/render'
 import { store } from '../state/store'
 import { getFilters } from '../components/filters'
 import { getMode } from '../features/discovery/modes'
@@ -72,7 +72,8 @@ export async function fetchRepos(): Promise<void> {
 
   const f = getFilters()
 
-  container.innerHTML = '<div class="col-span-full text-center py-24"><div class="inline-block w-8 h-8 border-2 border-blue-500/30 border-t-blue-400 rounded-full animate-spin"></div><p class="mt-3 text-sm text-slate-500">Scanning...</p></div>'
+  const perPage = f.perPage
+  renderSkeletons(perPage < 25 ? perPage : 6)
 
   document.getElementById('viewToggleBar')?.classList.add('hidden')
   const hdr = document.getElementById('headerResultCount')

@@ -1,3 +1,5 @@
+import { langIcon as _langIcon } from './devicon-map'
+
 const COLORS: Record<string, string> = {
   'JavaScript': '#f7df1e', 'TypeScript': '#3178c6', 'Python': '#3572A5', 'Go': '#00ADD8',
   'Rust': '#dea584', 'C': '#555555', 'C++': '#f34b7d', 'Java': '#b07219', 'Kotlin': '#A97BFF',
@@ -22,6 +24,8 @@ export function formatInt(n: number): string {
 export function langColor(lang: string | null): string {
   return lang && COLORS[lang] ? COLORS[lang] : DEFAULT_LANG_COLOR
 }
+
+export const langIcon = _langIcon
 
 export function getLanguageKeys(): string[] {
   return Object.keys(COLORS).sort()

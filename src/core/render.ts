@@ -1,11 +1,69 @@
 import { store } from '../state/store'
 import type { EnrichedRepository } from '../models/repository'
-import { formatCount, formatInt, langColor, escapeHtml } from '../utils/format'
+import { formatCount, formatInt, langColor, langIcon, escapeHtml } from '../utils/format'
 import { timeAgo, daysSince } from '../utils/dates'
 import { saveTracked } from '../utils/storage'
 import { renderBadges } from '../features/scoring/badge-display'
 import { renderWhyInteresting } from '../features/scoring/reasons'
 import { renderRadarMap } from '../features/radar-map/map'
+
+export function renderSkeletons(count = 6): void {
+  const container = document.getElementById('results')
+  if (!container) return
+  container.className = 'card-grid results-container'
+  container.innerHTML = Array.from({ length: count }, () => `
+    <div class="glass-card rounded-2xl flex flex-col overflow-hidden skeleton-card">
+      <div class="px-4 pt-4 pb-3 border-b border-[#263043]/50">
+        <div class="flex items-start gap-3">
+          <div class="skeleton-shimmer skeleton-avatar shrink-0"></div>
+          <div class="flex-1 min-w-0 space-y-2 pt-1">
+            <div class="skeleton-shimmer skeleton-line medium"></div>
+            <div class="skeleton-shimmer skeleton-line-sm short"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 pt-3 pb-3 space-y-2">
+        <div class="skeleton-shimmer skeleton-line long"></div>
+        <div class="skeleton-shimmer skeleton-line medium"></div>
+      </div>
+
+      <div class="px-4 pt-3 pb-3 flex gap-2">
+        <div class="skeleton-shimmer skeleton-badge"></div>
+        <div class="skeleton-shimmer skeleton-badge"></div>
+      </div>
+
+      <div class="px-4 pt-2 pb-3 space-y-3">
+        <div class="skeleton-shimmer" style="height:0.5rem;width:100%;border-radius:9999px"></div>
+        <div class="skeleton-shimmer skeleton-line-sm short"></div>
+      </div>
+
+      <div class="px-4 pt-3 pb-3">
+        <div class="grid grid-cols-4 gap-2">
+          ${Array.from({ length: 4 }, () => '<div class="space-y-1.5"><div class="skeleton-shimmer skeleton-metric"></div><div class="skeleton-shimmer" style="height:1rem;width:80%;border-radius:0.25rem"></div></div>').join('')}
+        </div>
+      </div>
+
+      <div class="px-4 pt-3 pb-3">
+        <div class="grid grid-cols-2 gap-y-2">
+          ${Array.from({ length: 4 }, () => '<div class="skeleton-shimmer skeleton-line-sm short"></div>').join('')}
+        </div>
+      </div>
+
+      <div class="px-4 pt-3 pb-3 flex gap-1 flex-wrap">
+        <div class="skeleton-shimmer skeleton-badge"></div>
+        <div class="skeleton-shimmer skeleton-badge"></div>
+        <div class="skeleton-shimmer skeleton-badge"></div>
+      </div>
+
+      <div class="mt-auto p-4 border-t border-[#263043]/50">
+        <div class="grid grid-cols-4 gap-2">
+          ${Array.from({ length: 4 }, () => '<div class="skeleton-shimmer skeleton-btn"></div>').join('')}
+        </div>
+      </div>
+    </div>`).join('')
+}
+
 function observeScroll(): void {
   const els = document.querySelectorAll('.scroll-reveal')
   if (!els.length) return
@@ -69,31 +127,27 @@ function renderCards(repos: EnrichedRepository[]): void {
     const remainingTags = tags.length - 4
 
     return `<div class="scroll-reveal glass-card rounded-2xl flex flex-col overflow-hidden shadow-lg">
-      <!-- R1: Header 72px -->
-      <div class="px-4 pt-4 pb-3 border-b border-[#263043]/50 h-[72px] overflow-hidden">
+      <!-- R1: Header -->
+      <div class="px-4 pt-4 pb-3 border-b border-[#263043]/50">
         <div class="flex items-start gap-3">
-          <img src="${avatarUrl}" alt="" class="w-10 h-10 rounded-xl bg-slate-800 shrink-0" loading="lazy">
-          <div class="min-w-0 flex-1">
+          <img src="${avatarUrl}" alt="" class="w-12 h-12 rounded-xl bg-slate-800 shrink-0" loading="lazy">
+          <div class="min-w-0 flex-1 flex flex-col justify-between h-12">
             <div class="flex items-start justify-between gap-2">
               <a href="${htmlUrl}" target="_blank" class="text-sm font-bold text-blue-400 hover:underline truncate block">${name}</a>
               <span class="track-btn text-xs px-2 py-0.5 rounded-full border shrink-0 ${isTracked ? 'tracked' : 'border-slate-700 text-slate-500 hover:border-slate-500'}" data-action="track" data-repo="${name}">${isTracked ? '✓ Tracked' : '+ Track'}</span>
             </div>
+            <div class="flex items-center gap-1">${r._badges.length ? renderBadges(r._badges) : ''}</div>
           </div>
         </div>
       </div>
 
-      <!-- R2: Description 52px -->
-      <div class="px-4 pt-3 pb-0 h-[52px] overflow-hidden">
+      <!-- R2: Description (fixed 51px) -->
+      <div class="px-4 pt-3 pb-0 h-[51px] overflow-hidden">
         <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${desc}</p>
       </div>
 
-      <!-- R3: Badge 28px -->
-      <div class="px-4 pt-3 pb-0 h-[28px] flex items-center justify-center overflow-hidden">
-        ${r._badges.length ? renderBadges(r._badges) : ''}
-      </div>
-
-      <!-- R4: Radar Score 24px -->
-      <div class="px-4 pt-3 pb-0 h-[24px] overflow-hidden">
+      <!-- R3: Radar Score -->
+      <div class="px-4 pt-3 pb-0">
         <div class="flex items-center gap-2 cursor-pointer" data-score-click="${name}">
           <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
             <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style="width:${r._score}%"></div>
@@ -102,8 +156,8 @@ function renderCards(repos: EnrichedRepository[]): void {
         </div>
       </div>
 
-      <!-- R5: Classification 24px -->
-      <div class="px-4 pt-1 pb-0 h-[24px] overflow-hidden">
+      <!-- R5: Classification -->
+      <div class="px-4 pt-1 pb-0">
         <div class="flex items-center">
           <span class="text-[10px] font-medium ${r._score >= 75 ? 'text-growth' : r._score >= 60 ? 'text-alert' : 'text-slate-500'}">${escapeHtml(r._scoreDescription)}</span>
           <span class="text-[10px] text-slate-600 mx-1">·</span>
@@ -111,23 +165,23 @@ function renderCards(repos: EnrichedRepository[]): void {
         </div>
       </div>
 
-      <!-- R6: Metrics 68px -->
-      <div class="px-4 pt-3 pb-0 h-[68px] overflow-hidden">
+      <!-- R6: Metrics -->
+      <div class="px-4 pt-3 pb-0">
         <div class="grid grid-cols-4 gap-2">
           <div><div class="stat-label">Stars</div><div class="stat-value">${formatCount(r.stargazers_count)}</div></div>
           <div><div class="stat-label">Growth</div><div class="stat-value text-growth">+${formatCount(r._weeklyGrowth)}</div></div>
           <div><div class="stat-label">Forks</div><div class="stat-value">${formatCount(r.forks_count)}</div></div>
-          <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span>${lang}</div></div>
+          <div><div class="stat-label">Lang</div><div class="stat-value flex items-center gap-1">${r.language ? `<i class="${langIcon(r.language)} lang-icon"></i>` : '<span class="lang-dot"></span>'}${lang}</div></div>
         </div>
       </div>
 
-      <!-- R7: Insight Preview — min-height to allow expansion -->
-      <div class="px-4 pt-3 pb-0 min-h-[40px]">
+      <!-- R7: Insight Preview -->
+      <div class="px-4 pt-3 pb-0">
         ${renderWhyInteresting(r)}
       </div>
 
-      <!-- R8: Dates 44px -->
-      <div class="px-4 pt-3 pb-0 h-[44px] overflow-hidden">
+      <!-- R8: Dates -->
+      <div class="px-4 pt-3 pb-0">
         <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-500">
           <div><span class="text-slate-600">Created</span> <span class="text-slate-300">${daysSince(r.created_at)}d ago</span></div>
           <div><span class="text-slate-600">Updated</span> <span class="text-slate-300">${timeAgo(r.pushed_at)}</span></div>
@@ -136,18 +190,18 @@ function renderCards(repos: EnrichedRepository[]): void {
         </div>
       </div>
 
-      <!-- R9: Tags 40px — max 4 visible -->
-      <div class="px-4 pt-3 pb-0 h-[40px] overflow-hidden">
+      <!-- R9: Tags -->
+      <div class="px-4 pt-3 pb-0">
         ${tags.length ? `<div class="flex flex-wrap gap-1">${visibleTags.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join('')}${remainingTags > 0 ? `<span class="badge badge-overflow">+${remainingTags}</span>` : ''}</div>` : ''}
       </div>
 
-      <!-- R10: Actions 56px -->
-      <div class="mt-auto p-4 border-t border-[#263043]/50 h-[56px]">
+      <!-- R10: Actions -->
+      <div class="mt-auto p-4 border-t border-[#263043]/50">
         <div class="grid grid-cols-4 gap-2 h-full">
-          <a href="${htmlUrl}" target="_blank" class="flex items-center justify-center text-center text-xs font-medium rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all">Open GitHub</a>
-          <button data-action="track" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track'}</button>
-          <button data-action="compare" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all ${store.getState().compareList.includes(r.full_name) ? 'text-blue-400 border-blue-500/30' : 'text-slate-400 hover:text-blue-400'}" title="Compare">⇄</button>
-          <button data-action="timeline" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all text-slate-400 hover:text-blue-400" title="Timeline">📅</button>
+          <a href="${htmlUrl}" target="_blank" class="flex items-center justify-center text-center text-xs font-medium rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all px-3 py-1.5">GitHub</a>
+          <button data-action="track" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all px-3 py-1.5 ${isTracked ? 'text-blue-400' : 'text-slate-400'}">${isTracked ? 'Tracked' : 'Track'}</button>
+          <button data-action="compare" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all px-3 py-1.5 ${store.getState().compareList.includes(r.full_name) ? 'text-blue-400 border-blue-500/30' : 'text-slate-400 hover:text-blue-400'}">Compare</button>
+          <button data-action="timeline" data-repo="${name}" class="flex items-center justify-center text-center text-xs font-medium rounded-xl glass border-slate-700/50 hover:border-blue-500/30 transition-all px-3 py-1.5 text-slate-400 hover:text-blue-400">Timeline</button>
         </div>
       </div>
     </div>`
@@ -234,7 +288,7 @@ function renderList(repos: EnrichedRepository[]): void {
           <td><div class="font-semibold text-sm">${formatCount(r.stargazers_count)}</div><div class="text-[10px] text-growth">+${formatCount(r._weeklyGrowth)}/w</div></td>
           <td style="min-width:100px"><div class="text-xs font-medium text-slate-300">+${formatInt(r._weeklyGrowth)}</div><div class="text-[10px] text-growth">▲</div></td>
           <td><div class="font-medium text-sm">${formatCount(r.forks_count)}</div></td>
-          <td><div class="flex items-center gap-1"><span class="lang-dot" style="background:${langColor(r.language)}"></span><span class="text-xs">${lang}</span></div></td>
+          <td><div class="flex items-center gap-1">${r.language ? `<i class="${langIcon(r.language)} lang-icon"></i>` : '<span class="lang-dot"></span>'}<span class="text-xs">${lang}</span></div></td>
           <td><div class="text-xs text-slate-400">${daysSince(r.created_at)}d</div></td>
           <td><span class="text-xs font-medium ${activityClass}">${activity}</span></td>
           <td style="min-width:70px">

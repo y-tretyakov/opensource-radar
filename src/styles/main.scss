@@ -14,8 +14,12 @@
 body {
   background: #080B12;
   color: #F5F7FF;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: $font-sans;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+.font-display { font-family: $font-display; }
 
 .sparkline-svg {
   width: 100%;
@@ -116,6 +120,7 @@ body {
 }
 
 .breakdown-modal-name {
+  font-family: $font-display;
   font-size: 0.9rem;
   font-weight: 700;
   color: #58a6ff;
@@ -173,6 +178,7 @@ body {
 }
 
 .breakdown-value {
+  font-family: $font-mono;
   font-size: 0.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -317,6 +323,7 @@ table.sortable {
 }
 
 .radar-tooltip-name {
+  font-family: $font-display;
   font-weight: 700;
   color: #58a6ff;
   margin-bottom: 0.15rem;
@@ -360,6 +367,7 @@ table.sortable {
 }
 
 .compare-repo-name {
+  font-family: $font-display;
   font-weight: 700;
   color: #58a6ff;
   font-size: 0.8rem;
@@ -396,6 +404,7 @@ table.sortable {
 }
 
 .compare-cell-val {
+  font-family: $font-mono;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #c9d1d9;
@@ -453,6 +462,7 @@ table.sortable {
 }
 
 .timeline-stat-value {
+  font-family: $font-mono;
   font-size: 0.85rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -506,12 +516,14 @@ table.sortable {
 }
 
 .timeline-date {
+  font-family: $font-mono;
   font-size: 0.6rem;
   color: #64748b;
   font-variant-numeric: tabular-nums;
 }
 
 .timeline-label {
+  font-family: $font-display;
   font-size: 0.8rem;
   font-weight: 600;
   color: #c9d1d9;
@@ -535,6 +547,7 @@ table.sortable {
 }
 
 .mode-tab {
+  font-family: $font-display;
   padding: 0.4rem 0.85rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -595,11 +608,36 @@ input[type="range"] { accent-color: #1f6feb; }
 }
 
 .insight-panel {
-  display: none;
-  animation: fadeIn 0.2s ease;
+  display: block;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  border-top-width: 0;
+  transition:
+    max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    margin 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-top-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .insight-container.expanded {
-  .insight-panel { display: block; }
-  .insight-chevron { transform: rotate(90deg); }
+  .insight-panel {
+    max-height: 600px;
+    opacity: 1;
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+    margin-top: 0.5rem;
+    border-top-width: 1px;
+  }
+  .insight-chevron {
+    transform: rotate(90deg);
+  }
+}
+
+.insight-chevron {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

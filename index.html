@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; style-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; img-src 'self' https://*.githubusercontent.com https://*.github.com data:; connect-src 'self' https://api.github.com; font-src 'self' data:; base-uri 'self'; form-action 'none';">
-    <title>Neon Observatory | Radar Pro</title>
-    <link rel="icon" type="image/svg+xml" href="/opensource-radar/favicon.svg">
+    <title>Radar Pro</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen flex flex-col antialiased">
@@ -14,14 +14,9 @@
         <div class="bg-[#080B12]/80 backdrop-blur-xl">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#radarGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <defs><linearGradient id="radarGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#58a6ff"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs>
-                        <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
-                        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
-                        <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
-                    </svg>
-                    <span class="text-lg font-bold bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent tracking-tight">radar</span>
-                    <span class="text-[0.6rem] uppercase tracking-widest text-blue-400 font-medium px-1.5 py-0.5 rounded-full border border-blue-500/30" style="box-shadow:0 0 8px rgba(31,111,235,0.15)">Pro</span>
+                    <img src="logo.webp" alt="radar" width="66" height="66" class="shrink-0">
+                    <span class="text-xl font-bold bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent tracking-wide">radar</span>
+                    <span class="text-[0.6rem] uppercase tracking-widest text-orange-400 font-bold px-1.5 py-0.5 rounded-full border border-orange-500" style="box-shadow:0 0 8px rgba(255,165,0,0.3)">Pro</span>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-blue-400/70 font-medium"><span class="neon-dot"></span>Live Signal</span>
